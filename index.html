@@ -970,6 +970,7 @@ const BUILT_IN = [
 // STORAGE
 // ═══════════════════════════════════════════════════
 const LS = "cvtv_v4";
+const LS_HIDDEN = "cvtv_hidden_v4";
 const ADMIN_PW = "cvtv2025";
 
 function loadUserContent() {
@@ -978,9 +979,17 @@ function loadUserContent() {
 function saveUserContent(d) {
   localStorage.setItem(LS, JSON.stringify(d));
 }
+function loadHidden() {
+  try { return JSON.parse(localStorage.getItem(LS_HIDDEN) || "[]"); } catch { return []; }
+}
+function saveHidden(ids) {
+  localStorage.setItem(LS_HIDDEN, JSON.stringify(ids));
+}
 function getAllContent() {
   const user = loadUserContent();
-  const combined = [...user, ...BUILT_IN];
+  const hidden = loadHidden();
+  const visibleBuiltIn = BUILT_IN.filter(d => !hidden.includes(d.id));
+  const combined = [...user, ...visibleBuiltIn];
   combined.sort((a, b) => {
     if (a.pinned === "yes" && b.pinned !== "yes") return -1;
     if (b.pinned === "yes" && a.pinned !== "yes") return 1;
@@ -1329,10 +1338,7 @@ function renderAdminLists() {
           <div class="sr-meta">${esc(item.cat)} &middot; ${ago(item.date)}</div>
         </div>
         <span class="sr-type ${item.type === "video" ? "sr-type-video" : "sr-type-article"}">${item.type === "video" ? "Video" : "Article"}</span>
-        ${isUser
-          ? `<button class="btn-del" onclick="deleteContent('${item.id}')">Delete</button>`
-          : `<span style="font-size:10px;color:var(--muted);padding:4px 8px">Built-in</span>`
-        }
+        <button class="btn-del" onclick="deleteContent('${item.id}')">Delete</button>
       </div>`;
     }).join("");
   };
@@ -1342,7 +1348,18 @@ function renderAdminLists() {
 }
 function deleteContent(id) {
   if (!confirm("Delete this content? This cannot be undone.")) return;
-  saveUserContent(loadUserContent().filter(d => d.id !== id));
+  // Remove from user content if it's a user article
+  const userData = loadUserContent();
+  if (userData.find(d => d.id === id)) {
+    saveUserContent(userData.filter(d => d.id !== id));
+  } else {
+    // It's a built-in — add to hidden list
+    const hidden = loadHidden();
+    if (!hidden.includes(id)) {
+      hidden.push(id);
+      saveHidden(hidden);
+    }
+  }
   renderAdminLists();
   renderAll();
   toast("Deleted.", false);
