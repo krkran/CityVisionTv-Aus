@@ -862,13 +862,21 @@ input,textarea,select{font-family:inherit}
         </div>
         <hr class="f-divider">
         <div class="frow">
-          <label>Picture / Thumbnail URL</label>
-          <input type="url" id="fImg" placeholder="https://...">
-          <p class="hint">Paste a direct image link. <strong>To use your own photos:</strong><br>
-          1. In GitHub go to your <code>images/</code> folder &rarr; Upload your photo<br>
-          2. Click the uploaded file &rarr; click <strong>Download raw file</strong> (or right-click the image &rarr; Copy image address)<br>
-          3. The URL should look like: <code>https://raw.githubusercontent.com/krkran/cityvision/main/images/yourphoto.jpg</code><br>
-          If you paste a normal GitHub page URL (github.com/...) it will be auto-converted for you.</p>
+          <label>Picture</label>
+          <input type="text" id="fImg" placeholder="Paste any image URL here..." style="width:100%;border:1px solid var(--sand2);padding:9px 11px;font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff;outline:none;transition:border-color .2s" oninput="previewImg(this.value)">
+          <p class="hint" style="margin-top:6px">
+            <strong>Easiest:</strong> Go to <a href="https://imgur.com/upload" target="_blank" style="color:var(--violet);font-weight:600">imgur.com/upload</a> &rarr; upload your photo &rarr; once it loads, <strong>right-click the image &rarr; Copy image address</strong> &rarr; paste above.<br>
+            Or right-click any image on Facebook, YouTube, Google &rarr; Copy image address &rarr; paste above.
+          </p>
+          <div id="imgPreviewWrap" style="display:none;margin-top:10px">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Preview</div>
+            <img id="imgPreview" src="" alt="" style="width:100%;max-height:200px;object-fit:cover;border:1px solid var(--sand2);display:block"
+              onerror="document.getElementById('imgPreviewErr').style.display='block';this.style.display='none'"
+              onload="document.getElementById('imgPreviewErr').style.display='none';this.style.display='block'">
+            <div id="imgPreviewErr" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:8px 12px;font-size:12px;margin-top:6px">
+              Could not load image. Make sure you right-clicked the <em>actual image</em> and chose "Copy image address" — not the page link.
+            </div>
+          </div>
         </div>
         <div class="frow">
           <label>External Link (Facebook / YouTube / etc.)</label>
@@ -1083,7 +1091,7 @@ function renderHero() {
 
   let mainHtml = "";
   if (main.img) {
-    mainHtml += `<a class="hero-img-wrap" onclick="openContent('${main.id}')" href="#"><img class="hero-img" src="${esc(main.img)}" alt="" loading="eager"></a>`;
+    mainHtml += `<a class="hero-img-wrap" onclick="openContent('${main.id}')" href="#"><img class="hero-img" src="${esc(main.img)}" alt="" loading="eager" onerror="this.onerror=null;this.parentElement.style.display='none'"></a>`;
   }
   mainHtml += `<div class="hero-body">`;
   mainHtml += `<span class="tag tag-red" onclick="setFilter('${main.cat}')" style="cursor:pointer" title="Filter by ${esc(main.cat)}">${esc(main.cat)}</span>`;
@@ -1099,7 +1107,7 @@ function renderHero() {
   let sidesHtml = "";
   sides.forEach(s => {
     sidesHtml += `<a class="hstack-item" onclick="openContent('${s.id}');return false" href="#">`;
-    if (s.img) sidesHtml += `<img class="hsi-img" src="${esc(s.img)}" alt="" loading="lazy">`;
+    if (s.img) sidesHtml += `<img class="hsi-img" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.style.display='none'">`;
     sidesHtml += `<span class="tag tag-outline" onclick="event.stopPropagation();setFilter('${s.cat}')" style="cursor:pointer">${esc(s.cat)}</span>`;
     sidesHtml += `<div class="hsi-title">${esc(s.title)}</div>`;
     sidesHtml += `<div class="hsi-meta">${ago(s.date)}</div>`;
@@ -1122,7 +1130,7 @@ function renderVideoBand() {
   grid.innerHTML = videos.map(v => `
     <a class="video-card" onclick="openContent('${v.id}');return false" href="#">
       <div class="video-thumb-wrap">
-        ${v.img ? `<img class="video-thumb" src="${esc(v.img)}" alt="" loading="lazy">` : ph(v.cat, "video-thumb-ph")}
+        ${v.img ? `<img class="video-thumb" src="${esc(v.img)}" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='block'">` + ph(v.cat,"video-thumb-ph") : ph(v.cat, "video-thumb-ph")}
         <div class="video-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
       </div>
       <div class="video-info">
@@ -1182,7 +1190,7 @@ function renderFeed() {
     if (i === 0) {
       // Big 2-col
       html += `<a class="art-big" onclick="openContent('${item.id}');return false" href="#">`;
-      html += item.img ? `<img class="ab-img" src="${esc(item.img)}" alt="" loading="eager">` : ph(item.cat, "ab-ph");
+      html += item.img ? `<img class="ab-img" src="${esc(item.img)}" alt="" loading="eager" onerror="this.style.display='none';this.nextSibling.style.display='block'">${ph(item.cat, "ab-ph").replace('display:block', 'display:none')}` : ph(item.cat, "ab-ph");
       html += `<div class="ab-body"><span class="ab-tag" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer">${esc(item.cat)}</span>`;
       if (item.type === "video") html += ` <span style="display:inline-block;background:var(--ink);color:#fff;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;padding:2px 8px;margin-bottom:8px">Video</span>`;
       html += `<div class="ab-title">${esc(item.title)}</div>`;
@@ -1192,7 +1200,7 @@ function renderFeed() {
     } else if (i >= 1 && i <= 3) {
       if (i === 1) html += `<div class="art-row3">`;
       html += `<a class="arc" onclick="openContent('${item.id}');return false" href="#">`;
-      html += item.img ? `<img class="arc-img" src="${esc(item.img)}" alt="" loading="lazy">` : ph(item.cat, "arc-ph");
+      html += item.img ? `<img class="arc-img" src="${esc(item.img)}" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\"arc-ph\" style=\"background:linear-gradient(135deg,#1a0e50,#04040a)\"></div>')">` : ph(item.cat, "arc-ph");
       html += `<span class="arc-tag" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer" title="Filter by ${esc(item.cat)}">${esc(item.cat)}</span>`;
       html += `<div class="arc-title">${esc(item.title)}</div>`;
       html += `<div class="arc-meta">${item.author ? esc(item.author) + " &middot; " : ""}${ago(item.date)}</div>`;
@@ -1201,7 +1209,7 @@ function renderFeed() {
     } else {
       // List row
       html += `<div class="art-list-row"><a class="arl" onclick="openContent('${item.id}');return false" href="#">`;
-      html += item.img ? `<img class="arl-img" src="${esc(item.img)}" alt="" loading="lazy">` : ph(item.cat, "arl-ph");
+      html += item.img ? `<img class="arl-img" src="${esc(item.img)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none">` + ph(item.cat,"arl-ph") + `</div>` : ph(item.cat, "arl-ph");
       html += `<div><div class="arl-show" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer">${esc(item.cat)}${item.type === "video" ? " &middot; Video" : ""} ›</div>`;
       html += `<div class="arl-title">${esc(item.title)}</div>`;
       html += `<div class="arl-meta">${item.author ? esc(item.author) + " &middot; " : ""}${ago(item.date)}</div>`;
@@ -1227,7 +1235,7 @@ function renderTrending() {
   if (!data.length) { el.innerHTML = `<p style="font-size:12.5px;color:var(--muted);padding:8px 0">Articles appear here once published.</p>`; return; }
   el.innerHTML = data.map(d =>
     `<a class="sb-art" onclick="openContent('${d.id}');return false" href="#">` +
-    (d.img ? `<img class="sba-img" src="${esc(d.img)}" alt="" loading="lazy">` : ph(d.cat, "sba-ph")) +
+    (d.img ? `<img class="sba-img" src="${esc(d.img)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextSibling&&(this.nextSibling.style.display='block')">${ph(d.cat, "sba-ph").replace('block', 'none')}` : ph(d.cat, "sba-ph")) +
     `<div><div class="sba-show">${esc(d.cat)}</div><div class="sba-title">${esc(d.title)}</div><div class="sba-date">${ago(d.date)}</div></div></a>`
   ).join("");
 }
@@ -1242,7 +1250,7 @@ function openContent(id) {
   const body = document.getElementById("modalBody");
 
   hero.innerHTML = `<button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>` +
-    (item.img ? `<img class="modal-hero-img" src="${esc(item.img)}" alt="" loading="eager">` : ph(item.cat, "modal-hero-ph"));
+    (item.img ? `<img class="modal-hero-img" src="${esc(item.img)}" alt="" loading="eager" onerror="this.style.display='none';this.nextSibling&&(this.nextSibling.style.display='block')">${ph(item.cat, "modal-hero-ph").replace('block', 'none')}` : ph(item.cat, "modal-hero-ph"));
 
   const bodyText = (item.body || item.excerpt || "")
     .split("\n\n").map(p => `<p>${esc(p)}</p>`).join("");
@@ -1369,6 +1377,10 @@ function editContent(id) {
   document.getElementById("fExcerpt").value = item.excerpt || "";
   document.getElementById("fBody").value = item.body || "";
   document.getElementById("fImg").value = item.img || "";
+  if (item.img) { previewImg(item.img); } else {
+    const pw = document.getElementById("imgPreviewWrap");
+    if (pw) pw.style.display = "none";
+  }
   document.getElementById("fLink").value = item.link || "";
   document.getElementById("fPinned").value = item.pinned || "no";
   document.getElementById("fVideoRow").style.display = item.type === "video" ? "block" : "none";
@@ -1410,6 +1422,9 @@ function openPublishForm(type) {
   // Reset edit mode
   const submitBtn = document.getElementById("fSubmitBtn");
   if (submitBtn) { submitBtn.dataset.editId = ""; submitBtn.textContent = "Publish Now"; }
+  // Clear image preview
+  const pw = document.getElementById("imgPreviewWrap");
+  if (pw) pw.style.display = "none";
   document.getElementById("fVideoRow").style.display = type === "video" ? "block" : "none";
   document.getElementById("fBodyRow").style.display = type === "article" ? "block" : "none";
   ["fTitle","fCat","fExcerpt"].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove("invalid"); });
@@ -1418,6 +1433,26 @@ function closePublishForm() {
   document.getElementById("publishView").style.display = "none";
   showManageView();
 }
+function previewImg(url) {
+  var wrap = document.getElementById('imgPreviewWrap');
+  var img = document.getElementById('imgPreview');
+  var err = document.getElementById('imgPreviewErr');
+  url = (url || '').trim();
+  // Auto-fix GitHub blob URLs
+  url = url.replace(/https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.+)/, 'https://raw.githubusercontent.com/$1/$2/$3/$4');
+  // Update the input field with fixed URL
+  var input = document.getElementById('fImg');
+  if (input && url !== input.value) input.value = url;
+  if (!url) { wrap.style.display = 'none'; return; }
+  err.style.display = 'none';
+  img.style.display = 'block';
+  img.src = '';
+  wrap.style.display = 'block';
+  // Small delay so browser registers the src change
+  setTimeout(function() { img.src = url; }, 50);
+}
+
+
 function publishContent() {
   const title = document.getElementById("fTitle").value.trim();
   const cat = document.getElementById("fCat").value;
@@ -1429,15 +1464,16 @@ function publishContent() {
   if (!excerpt) { document.getElementById("fExcerpt").classList.add("invalid"); valid = false; }
   if (!valid) return;
 
-  // Auto-fix GitHub blob URLs → raw URLs so images actually load
+  // Fix image URLs to ensure they load
   function fixImgUrl(url) {
     if (!url) return "";
+    url = url.trim();
     // Convert github.com blob URL to raw.githubusercontent.com
     url = url.replace(
       /https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.*)/,
       "https://raw.githubusercontent.com/$1/$2/$3/$4"
     );
-    return url.trim();
+    return url;
   }
 
   const editId = document.getElementById("fSubmitBtn").dataset.editId;
