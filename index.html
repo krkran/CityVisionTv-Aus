@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>City Vision TV Australia</title>
+<title>City Vision TV Australia — Nepali Media Voice</title>
 <meta name="description" content="City Vision TV Australia — Nepali community media. Stories, news and culture by Nepali, for Nepali.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;1,9..40,400&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -451,6 +451,7 @@ input,textarea,select{font-family:inherit}
   .shows-grid{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:640px){
+  #contact-section div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
   .masthead-inner{grid-template-columns:auto 1fr}
   .masthead-center{display:none}
   .hero-stack{grid-template-columns:1fr}
@@ -528,6 +529,7 @@ input,textarea,select{font-family:inherit}
     <div class="nav-divider"></div>
     <a class="ntab ntab-accent" href="#shows-section">Our Shows</a>
     <a class="ntab" href="https://open.spotify.com/show/5AyBIxWf3yroPNncxRpsVw?si=ee989c27326a4a94" target="_blank">Spotify</a>
+    <a class="ntab" href="contact.html">Contact</a>
   </div>
 </nav>
 
@@ -735,7 +737,7 @@ input,textarea,select{font-family:inherit}
         <h4>About</h4>
         <ul>
           <li><a href="https://facebook.com/profile.php?id=61575600852772" target="_blank">Our Story</a></li>
-          <li><a href="https://facebook.com/profile.php?id=61575600852772" target="_blank">Contact Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
           <li><a href="https://facebook.com/profile.php?id=61575600852772" target="_blank">Advertise</a></li>
           <li><a href="https://facebook.com/profile.php?id=61575600852772" target="_blank">Submit a Story</a></li>
           <li><a href="https://open.spotify.com/show/5AyBIxWf3yroPNncxRpsVw?si=ee989c27326a4a94" target="_blank">Kurakani on Spotify</a></li>
@@ -746,6 +748,7 @@ input,textarea,select{font-family:inherit}
       <span class="footer-link" onclick="setFilter('all')">Home</span>
       <span class="footer-link" onclick="setFilter('City Vision Reports')">News</span>
       <span class="footer-link" onclick="setFilter('video')">Videos</span>
+      <a class="footer-link" href="contact.html">Contact</a>
       <a class="footer-link" href="#shows-section">Shows</a>
       <a class="footer-link" href="https://open.spotify.com/show/5AyBIxWf3yroPNncxRpsVw?si=ee989c27326a4a94" target="_blank">Podcast</a>
       <a class="footer-link" href="https://instagram.com/cityvisiontv" target="_blank">Instagram</a>
@@ -1673,6 +1676,8 @@ function renderAll() {
 initDates();
 initReveal();
 renderAll();
+
+
 </script>
 </body>
 </html>
