@@ -405,6 +405,8 @@ input,textarea,select{font-family:inherit}
 .sr-type{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:2px 6px;border-radius:1px;color:#fff;flex-shrink:0}
 .sr-type-article{background:var(--red)}
 .sr-type-video{background:var(--navy)}
+.btn-edit{border:1px solid var(--violet);color:var(--violet);padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;transition:all .2s;background:none;flex-shrink:0;margin-right:4px}
+.btn-edit:hover{background:var(--violet);border-color:var(--violet);color:#fff}
 .btn-del{border:1px solid var(--sand2);color:var(--muted);padding:4px 10px;font-size:10px;cursor:pointer;font-family:inherit;transition:all .2s;background:none;flex-shrink:0}
 .btn-del:hover{background:var(--red);border-color:var(--red);color:#fff}
 .empty-list{text-align:center;padding:24px;color:var(--muted);font-size:13px}
@@ -862,7 +864,11 @@ input,textarea,select{font-family:inherit}
         <div class="frow">
           <label>Picture / Thumbnail URL</label>
           <input type="url" id="fImg" placeholder="https://...">
-          <p class="hint">Paste a direct image link. <strong>To use your own photos:</strong> upload to GitHub (the <code>images/</code> folder) then paste the raw URL: <code>https://raw.githubusercontent.com/krkran/cityvision/main/images/photo.jpg</code></p>
+          <p class="hint">Paste a direct image link. <strong>To use your own photos:</strong><br>
+          1. In GitHub go to your <code>images/</code> folder &rarr; Upload your photo<br>
+          2. Click the uploaded file &rarr; click <strong>Download raw file</strong> (or right-click the image &rarr; Copy image address)<br>
+          3. The URL should look like: <code>https://raw.githubusercontent.com/krkran/cityvision/main/images/yourphoto.jpg</code><br>
+          If you paste a normal GitHub page URL (github.com/...) it will be auto-converted for you.</p>
         </div>
         <div class="frow">
           <label>External Link (Facebook / YouTube / etc.)</label>
@@ -885,7 +891,7 @@ input,textarea,select{font-family:inherit}
             <option value="yes">Yes &mdash; show at the top</option>
           </select>
         </div>
-        <button class="btn-publish" onclick="publishContent()">Publish Now</button>
+        <button class="btn-publish" id="fSubmitBtn" data-edit-id="" onclick="publishContent()">Publish Now</button>
       </div>
     </div>
   </div>
@@ -1341,6 +1347,7 @@ function renderAdminLists() {
           <div class="sr-meta">${esc(item.cat)} &middot; ${ago(item.date)} ${isBuiltIn ? "&middot; <em style='color:var(--muted)'>sample</em>" : ""}</div>
         </div>
         <span class="sr-type ${item.type === "video" ? "sr-type-video" : "sr-type-article"}">${item.type === "video" ? "Video" : "Article"}</span>
+        ${isBuiltIn ? "" : `<button class="btn-edit" onclick="editContent('${item.id}')">Edit</button>`}
         <button class="btn-del" onclick="deleteContent('${item.id}')">Delete</button>
       </div>`;
     }).join("");
@@ -1349,6 +1356,29 @@ function renderAdminLists() {
   renderList(articles, al);
   renderList(videos, vl);
 }
+function editContent(id) {
+  const item = loadUserContent().find(d => d.id === id);
+  if (!item) return;
+  pubType = item.type;
+  document.getElementById("manageView").style.display = "none";
+  document.getElementById("publishView").style.display = "block";
+  document.getElementById("pubFormTitle").textContent = item.type === "video" ? "Edit Video" : "Edit Article";
+  document.getElementById("fTitle").value = item.title || "";
+  document.getElementById("fCat").value = item.cat || "";
+  document.getElementById("fAuthor").value = item.author || "";
+  document.getElementById("fExcerpt").value = item.excerpt || "";
+  document.getElementById("fBody").value = item.body || "";
+  document.getElementById("fImg").value = item.img || "";
+  document.getElementById("fLink").value = item.link || "";
+  document.getElementById("fPinned").value = item.pinned || "no";
+  document.getElementById("fVideoRow").style.display = item.type === "video" ? "block" : "none";
+  document.getElementById("fBodyRow").style.display = item.type === "article" ? "block" : "none";
+  ["fTitle","fCat","fExcerpt"].forEach(id => document.getElementById(id).classList.remove("invalid"));
+  // Mark as edit mode
+  document.getElementById("fSubmitBtn").dataset.editId = id;
+  document.getElementById("fSubmitBtn").textContent = "Save Changes";
+}
+
 function deleteContent(id) {
   if (!confirm("Delete this content? This cannot be undone.")) return;
   // Remove from user content if it's a user article
@@ -1377,6 +1407,9 @@ function openPublishForm(type) {
   ["fTitle","fAuthor","fExcerpt","fBody","fImg","fLink"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   document.getElementById("fCat").value = "";
   document.getElementById("fPinned").value = "no";
+  // Reset edit mode
+  const submitBtn = document.getElementById("fSubmitBtn");
+  if (submitBtn) { submitBtn.dataset.editId = ""; submitBtn.textContent = "Publish Now"; }
   document.getElementById("fVideoRow").style.display = type === "video" ? "block" : "none";
   document.getElementById("fBodyRow").style.display = type === "article" ? "block" : "none";
   ["fTitle","fCat","fExcerpt"].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove("invalid"); });
@@ -1396,26 +1429,46 @@ function publishContent() {
   if (!excerpt) { document.getElementById("fExcerpt").classList.add("invalid"); valid = false; }
   if (!valid) return;
 
+  // Auto-fix GitHub blob URLs → raw URLs so images actually load
+  function fixImgUrl(url) {
+    if (!url) return "";
+    // Convert github.com blob URL to raw.githubusercontent.com
+    url = url.replace(
+      /https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.*)/,
+      "https://raw.githubusercontent.com/$1/$2/$3/$4"
+    );
+    return url.trim();
+  }
+
+  const editId = document.getElementById("fSubmitBtn").dataset.editId;
   const item = {
-    id: "user-" + Date.now(),
+    id: editId || ("user-" + Date.now()),
     type: pubType,
     title,
     cat,
     author: document.getElementById("fAuthor").value.trim(),
     excerpt,
     body: document.getElementById("fBody").value.trim(),
-    img: document.getElementById("fImg").value.trim(),
+    img: fixImgUrl(document.getElementById("fImg").value),
     link: document.getElementById("fLink").value.trim(),
     pinned: document.getElementById("fPinned").value,
-    date: new Date().toISOString()
+    date: editId ? (loadUserContent().find(d => d.id === editId) || {}).date || new Date().toISOString() : new Date().toISOString()
   };
 
   const data = loadUserContent();
-  data.unshift(item);
+  if (editId) {
+    const idx = data.findIndex(d => d.id === editId);
+    if (idx >= 0) data[idx] = item; else data.unshift(item);
+  } else {
+    data.unshift(item);
+  }
   saveUserContent(data);
+  document.getElementById("fSubmitBtn").dataset.editId = "";
+  document.getElementById("fSubmitBtn").textContent = "Publish Now";
+  document.getElementById("pubFormTitle").textContent = pubType === "video" ? "Add Video" : "New Article";
   closePublishForm();
   renderAll();
-  toast("Published!", true);
+  toast(editId ? "Article updated!" : "Published!", true);
 }
 
 // ═══════════════════════════════════════════════════
