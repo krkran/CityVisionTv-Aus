@@ -10,7 +10,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-body{background:#f0ede8;color:#111116;font-family:"DM Sans",sans-serif;line-height:1.6}
+body{background:#f0ede8;color:#111116;font-family:"DM Sans",sans-serif;line-height:1.6;-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
 :root{
   --red:#c01c1c;--red-dark:#9a1515;
@@ -125,14 +125,34 @@ a{color:inherit;text-decoration:none}
 
 /* RESPONSIVE */
 @media(max-width:900px){
-  .main{grid-template-columns:1fr}
-  .sidebar{order:-1}
+  .main{grid-template-columns:1fr;padding:32px 0 48px}
+  .sidebar{order:-1;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   .page-hero-inner{grid-template-columns:1fr}
   .hero-channels{display:none}
 }
-@media(max-width:600px){
+@media(max-width:640px){
+  .sidebar{grid-template-columns:1fr}
+  .faq-card,.social-card{display:none}
+  .page-hero{padding:36px 0 32px}
+  .hero-title{font-size:clamp(28px,8vw,40px)}
+  .hero-desc{font-size:14px}
+}
+@media(max-width:480px){
+  .container{padding:0 14px}
+  .masthead-inner{gap:10px}
+  .main{padding:20px 0 40px}
+  .form-card{padding:20px 16px}
+  .form-card-title{font-size:20px}
   .fgrid2{grid-template-columns:1fr}
-  .form-card{padding:22px}
+  .frow input,.frow textarea,.frow select{font-size:16px;padding:10px 11px}
+  .frow textarea{min-height:120px}
+  .submit-btn{padding:13px;font-size:11.5px}
+  .page-hero{padding:28px 0 24px}
+  .hero-title{font-size:28px}
+  .page-nav-inner{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .info-card{padding:20px 16px}
+  .page-footer-inner{flex-direction:column;text-align:center;gap:8px}
+  .f-links{flex-wrap:wrap;justify-content:center}
 }
 </style>
 </head>
@@ -204,8 +224,11 @@ a{color:inherit;text-decoration:none}
       <h2 class="form-card-title">Send us a message</h2>
       <p class="form-card-sub">Fill in the form below and we will get back to you as soon as possible — usually within 1-2 business days.</p>
 
-      <form id="contactForm" action="https://formspree.io/f/xyzerkqo" method="POST" onsubmit="handleSubmit(event)">
-        <input type="hidden" name="_subject" value="New message from City Vision TV website">
+      <form id="contactForm" action="https://api.web3forms.com/submit" method="POST" onsubmit="handleSubmit(event)">
+        <input type="hidden" name="access_key" value="3e00b24e-7297-4aa4-884d-5a5819b2e466">
+        <input type="hidden" name="subject" value="New message — City Vision TV website">
+        <input type="hidden" name="from_name" value="City Vision TV Website">
+        <input type="hidden" name="redirect" value="false">
 
         <div class="fgrid2">
           <div class="frow">
