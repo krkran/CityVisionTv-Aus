@@ -1707,44 +1707,6 @@ function deleteContent(id) {
   }
 }
 
-async function autoDeleteFromGitHub(id) {
-  var token = getToken();
-  if (!token) return;
-  showPublishingOverlay(true);
-  try {
-    var headers = {
-      "Authorization": "Bearer " + token,
-      "Accept": "application/vnd.github.v3+json",
-      "Content-Type": "application/json"
-    };
-    var apiBase = "https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_FILE;
-    var getRes = await fetch(apiBase + "?ref=" + GH_BRANCH, { headers: headers });
-    if (!getRes.ok) throw new Error("Could not read file");
-    var fileData = await getRes.json();
-    var sha = fileData.sha;
-    var content = atob(fileData.content.replace(/
-/g, ""));
-    // Remove the article block with this id
-    var pattern = new RegExp("  \\{\n    id: \\"" + id + "\\",[\s\S]*?  \\},\n", "");
-    var newContent = content.replace(pattern, "");
-    if (newContent === content) { showPublishingOverlay(false); return; } // not found, skip
-    var putRes = await fetch(apiBase, {
-      method: "PUT",
-      headers: headers,
-      body: JSON.stringify({
-        message: "delete: article " + id,
-        content: btoa(unescape(encodeURIComponent(newContent))),
-        sha: sha,
-        branch: GH_BRANCH
-      })
-    });
-    showPublishingOverlay(false);
-    if (putRes.ok) toast("Deleted from live site!", false);
-  } catch(e) {
-    showPublishingOverlay(false);
-    console.error("Delete from GitHub failed:", e);
-  }
-}
 
 // Publish form
 function openPublishForm(type) {
@@ -1996,160 +1958,85 @@ var GH_BRANCH = "main";
 var GH_MARKER = "// ADD NEW ARTICLES ABOVE THIS LINE";
 
 function makeArticleCode(item) {
-  function esc(s) {
-    return String(s || "")
-      .replace(/\/g, "\\")
-      .replace(/"/g, '\\"')
-      .replace(/
-/g, "\\n")
-      .replace(/
-/g, "");
+  function escVal(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n');
   }
-  return "  {
-" +
-    "    id: \"" + item.id + "\",
-" +
-    "    type: \"" + item.type + "\",
-" +
-    "    title: \"" + esc(item.title) + "\",
-" +
-    "    cat: \"" + esc(item.cat) + "\",
-" +
-    "    author: \"" + esc(item.author) + "\",
-" +
-    "    excerpt: \"" + esc(item.excerpt) + "\",
-" +
-    "    body: \"" + esc(item.body) + "\",
-" +
-    "    img: \"" + esc(item.img) + "\",
-" +
-    "    link: \"" + esc(item.link) + "\",
-" +
-    "    pinned: \"" + (item.pinned || "no") + "\",
-" +
-    "    date: \"" + item.date + "\"
-" +
-    "  },";
+  var lines = [
+    '  {',
+    '    id: "' + item.id + '",',
+    '    type: "' + item.type + '",',
+    '    title: "' + escVal(item.title) + '",',
+    '    cat: "' + escVal(item.cat) + '",',
+    '    author: "' + escVal(item.author) + '",',
+    '    excerpt: "' + escVal(item.excerpt) + '",',
+    '    body: "' + escVal(item.body) + '",',
+    '    img: "' + escVal(item.img) + '",',
+    '    link: "' + escVal(item.link) + '",',
+    '    pinned: "' + (item.pinned || 'no') + '",',
+    '    date: "' + item.date + '"',
+    '  },'
+  ];
+  return lines.join('\n');
 }
+
 
 async function autoPublishToGitHub(item, isEdit) {
   var token = getToken();
-  if (!token) {
-    // No token — fall back to the copy-paste dialog
-    showFallbackDialog(item, isEdit);
-    return;
-  }
-
-  // Show publishing overlay
+  if (!token) { showFallbackDialog(item, isEdit, null); return; }
   showPublishingOverlay(true);
-
   try {
     var headers = {
-      "Authorization": "Bearer " + token,
-      "Accept": "application/vnd.github.v3+json",
-      "Content-Type": "application/json"
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
     };
-    var apiBase = "https://api.github.com/repos/" + GH_REPO + "/contents/" + GH_FILE;
-
-    // Step 1: Get current file content + SHA
-    var getRes = await fetch(apiBase + "?ref=" + GH_BRANCH, { headers: headers });
-    if (!getRes.ok) throw new Error("Could not read file: " + getRes.status);
+    var apiBase = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_FILE;
+    var getRes = await fetch(apiBase + '?ref=' + GH_BRANCH, { headers: headers });
+    if (!getRes.ok) throw new Error('Could not read file: ' + getRes.status);
     var fileData = await getRes.json();
     var sha = fileData.sha;
-    var currentContent = atob(fileData.content.replace(/
-/g, ""));
-
+    var currentContent = atob(fileData.content.split('\n').join(''));
+    var newCode = makeArticleCode(item);
+    var marker = GH_MARKER;
+    if (currentContent.indexOf(marker) === -1) throw new Error('Marker not found. Please re-upload index.html.');
     var newContent;
     if (isEdit) {
-      // For edits: replace the existing entry by id
-      var oldPattern = new RegExp("  \\{\n    id: \\"" + item.id + "\\",[\s\S]*?  \\},\n", "");
-      if (oldPattern.test(currentContent)) {
-        newContent = currentContent.replace(oldPattern, makeArticleCode(item) + "
-");
+      // Try to replace existing entry, otherwise insert as new
+      var idMarker = '    id: "' + item.id + '",';
+      if (currentContent.indexOf(idMarker) !== -1) {
+        // Find the block start and end
+        var blockStart = currentContent.lastIndexOf('  {', currentContent.indexOf(idMarker));
+        var blockEnd = currentContent.indexOf('  },', blockStart) + 4;
+        newContent = currentContent.substring(0, blockStart) + newCode + currentContent.substring(blockEnd);
       } else {
-        // Not found as built-in, just insert as new
-        newContent = currentContent.replace(GH_MARKER, makeArticleCode(item) + "
-  " + GH_MARKER);
+        newContent = currentContent.replace(marker, newCode + '\n  ' + marker);
       }
     } else {
-      // New article: insert before the marker
-      if (currentContent.indexOf(GH_MARKER) === -1) {
-        throw new Error("Marker not found in file. Please re-upload index.html.");
-      }
-      newContent = currentContent.replace(GH_MARKER, makeArticleCode(item) + "
-  " + GH_MARKER);
+      newContent = currentContent.replace(marker, newCode + '\n  ' + marker);
     }
-
-    // Step 2: Push updated file
+    var encoded = btoa(unescape(encodeURIComponent(newContent)));
     var putRes = await fetch(apiBase, {
-      method: "PUT",
+      method: 'PUT',
       headers: headers,
       body: JSON.stringify({
-        message: (isEdit ? "edit: " : "post: ") + item.title.substring(0, 60),
-        content: btoa(unescape(encodeURIComponent(newContent))),
+        message: (isEdit ? 'edit: ' : 'post: ') + item.title.substring(0, 60),
+        content: encoded,
         sha: sha,
         branch: GH_BRANCH
       })
     });
-
     if (!putRes.ok) {
       var errBody = await putRes.json();
-      throw new Error(errBody.message || "GitHub push failed: " + putRes.status);
+      throw new Error(errBody.message || 'Push failed: ' + putRes.status);
     }
-
     showPublishingOverlay(false);
-    toast("Published live for everyone! &#127881;", true);
-
+    toast('Published live for everyone!', true);
   } catch(err) {
     showPublishingOverlay(false);
-    console.error("GitHub publish error:", err);
-    // Fall back to copy-paste dialog with error message
-    showFallbackDialog(item, isEdit, "Auto-publish failed: " + err.message + ". Use the manual method below.");
+    console.error('GitHub publish error:', err);
+    showFallbackDialog(item, isEdit, 'Auto-publish failed: ' + err.message);
   }
 }
-
-function showPublishingOverlay(show) {
-  var el = document.getElementById("publishingOverlay");
-  if (!el) return;
-  el.style.display = show ? "flex" : "none";
-}
-
-function showFallbackDialog(item, isEdit, errorMsg) {
-  var code = makeArticleCode(item);
-  document.getElementById("ghCode").value = code;
-  document.getElementById("ghDialogTitle").textContent = isEdit ? "Update Live Site" : "Publish to Live Site";
-  if (errorMsg) {
-    var errEl = document.getElementById("ghDialogError");
-    if (errEl) { errEl.textContent = errorMsg; errEl.style.display = "block"; }
-  }
-  document.getElementById("ghDialog").style.display = "flex";
-}
-
-function showGitHubDialog(item, isEdit) {
-  showFallbackDialog(item, isEdit, null);
-}
-
-function copyGhCode() {
-  var ta = document.getElementById("ghCode");
-  ta.select();
-  ta.setSelectionRange(0, 99999);
-  try {
-    document.execCommand("copy");
-    var btn = document.getElementById("ghCopyBtn");
-    btn.textContent = "Copied!";
-    btn.style.background = "#1DB954";
-    setTimeout(function() { btn.textContent = "Copy"; btn.style.background = "var(--ink)"; }, 2500);
-  } catch(e) {
-    navigator.clipboard && navigator.clipboard.writeText(ta.value);
-  }
-}
-
-// INIT
-initDates();
-initReveal();
-renderAll();
-
-
 </script>
 </body>
 </html>
