@@ -1080,7 +1080,7 @@ function renderHero() {
     mainHtml += `<a class="hero-img-wrap" onclick="openContent('${main.id}')" href="#"><img class="hero-img" src="${esc(main.img)}" alt="" loading="eager"></a>`;
   }
   mainHtml += `<div class="hero-body">`;
-  mainHtml += `<span class="tag tag-red">${esc(main.cat)}</span>`;
+  mainHtml += `<span class="tag tag-red" onclick="setFilter('${main.cat}')" style="cursor:pointer" title="Filter by ${esc(main.cat)}">${esc(main.cat)}</span>`;
   if (main.type === "video") mainHtml += ` <span class="tag tag-ink">Video</span>`;
   mainHtml += `<div class="hero-title" onclick="openContent('${main.id}')">${esc(main.title)}</div>`;
   if (main.excerpt) mainHtml += `<p class="hero-excerpt">${esc(trim(main.excerpt, 35))}</p>`;
@@ -1094,7 +1094,7 @@ function renderHero() {
   sides.forEach(s => {
     sidesHtml += `<a class="hstack-item" onclick="openContent('${s.id}');return false" href="#">`;
     if (s.img) sidesHtml += `<img class="hsi-img" src="${esc(s.img)}" alt="" loading="lazy">`;
-    sidesHtml += `<span class="tag tag-outline">${esc(s.cat)}</span>`;
+    sidesHtml += `<span class="tag tag-outline" onclick="event.stopPropagation();setFilter('${s.cat}')" style="cursor:pointer">${esc(s.cat)}</span>`;
     sidesHtml += `<div class="hsi-title">${esc(s.title)}</div>`;
     sidesHtml += `<div class="hsi-meta">${ago(s.date)}</div>`;
     sidesHtml += `</a>`;
@@ -1120,7 +1120,7 @@ function renderVideoBand() {
         <div class="video-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
       </div>
       <div class="video-info">
-        <div class="video-show">${esc(v.cat)}</div>
+        <div class="video-show" onclick="event.stopPropagation();setFilter('${v.cat}')" style="cursor:pointer">${esc(v.cat)} &#8250;</div>
         <div class="video-title">${esc(v.title)}</div>
         <div class="video-meta">${ago(v.date)}</div>
       </div>
@@ -1177,7 +1177,7 @@ function renderFeed() {
       // Big 2-col
       html += `<a class="art-big" onclick="openContent('${item.id}');return false" href="#">`;
       html += item.img ? `<img class="ab-img" src="${esc(item.img)}" alt="" loading="eager">` : ph(item.cat, "ab-ph");
-      html += `<div class="ab-body"><span class="ab-tag">${esc(item.cat)}</span>`;
+      html += `<div class="ab-body"><span class="ab-tag" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer">${esc(item.cat)}</span>`;
       if (item.type === "video") html += ` <span style="display:inline-block;background:var(--ink);color:#fff;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;padding:2px 8px;margin-bottom:8px">Video</span>`;
       html += `<div class="ab-title">${esc(item.title)}</div>`;
       if (item.excerpt) html += `<p class="ab-excerpt">${esc(trim(item.excerpt, 32))}</p>`;
@@ -1187,7 +1187,7 @@ function renderFeed() {
       if (i === 1) html += `<div class="art-row3">`;
       html += `<a class="arc" onclick="openContent('${item.id}');return false" href="#">`;
       html += item.img ? `<img class="arc-img" src="${esc(item.img)}" alt="" loading="lazy">` : ph(item.cat, "arc-ph");
-      html += `<span class="arc-tag">${esc(item.cat)}</span>`;
+      html += `<span class="arc-tag" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer" title="Filter by ${esc(item.cat)}">${esc(item.cat)}</span>`;
       html += `<div class="arc-title">${esc(item.title)}</div>`;
       html += `<div class="arc-meta">${item.author ? esc(item.author) + " &middot; " : ""}${ago(item.date)}</div>`;
       html += `</a>`;
@@ -1196,7 +1196,7 @@ function renderFeed() {
       // List row
       html += `<div class="art-list-row"><a class="arl" onclick="openContent('${item.id}');return false" href="#">`;
       html += item.img ? `<img class="arl-img" src="${esc(item.img)}" alt="" loading="lazy">` : ph(item.cat, "arl-ph");
-      html += `<div><div class="arl-show">${esc(item.cat)}${item.type === "video" ? " &middot; Video" : ""}</div>`;
+      html += `<div><div class="arl-show" onclick="event.stopPropagation();setFilter('${item.cat}')" style="cursor:pointer">${esc(item.cat)}${item.type === "video" ? " &middot; Video" : ""} ›</div>`;
       html += `<div class="arl-title">${esc(item.title)}</div>`;
       html += `<div class="arl-meta">${item.author ? esc(item.author) + " &middot; " : ""}${ago(item.date)}</div>`;
       html += `</div></a></div>`;
@@ -1242,7 +1242,7 @@ function openContent(id) {
     .split("\n\n").map(p => `<p>${esc(p)}</p>`).join("");
 
   body.innerHTML =
-    `<span class="modal-show">${esc(item.cat)}</span>` +
+    `<span class="modal-show" onclick="closeModal();setFilter('${item.cat}')" style="cursor:pointer" title="See all ${esc(item.cat)}">${esc(item.cat)}</span>` +
     (item.type === "video" ? `<span class="modal-type-badge">Video</span>` : "") +
     `<h2 class="modal-title">${esc(item.title)}</h2>` +
     `<div class="modal-meta">` +
@@ -1316,9 +1316,11 @@ function switchAdminTab(tab, el) {
   document.getElementById("adminVideosTab").style.display = tab === "videos" ? "block" : "none";
 }
 function renderAdminLists() {
+  // Use getAllContent() so hidden built-ins are properly excluded
+  const all = getAllContent();
   const user = loadUserContent();
-  const articles = [...user.filter(d => d.type !== "video"), ...BUILT_IN.filter(d => d.type !== "video")];
-  const videos = [...user.filter(d => d.type === "video"), ...BUILT_IN.filter(d => d.type === "video")];
+  const articles = all.filter(d => d.type !== "video");
+  const videos = all.filter(d => d.type === "video");
 
   const al = document.getElementById("articleList");
   const vl = document.getElementById("videoList");
@@ -1331,11 +1333,12 @@ function renderAdminLists() {
   const renderList = (items, el) => {
     if (!items.length) { el.innerHTML = `<div class="empty-list">Nothing here yet.</div>`; return; }
     el.innerHTML = items.map(item => {
-      const isUser = user.find(u => u.id === item.id);
+      const isUserItem = !!user.find(u => u.id === item.id);
+      const isBuiltIn = !isUserItem;
       return `<div class="story-row">
         <div class="sr-info">
           <div class="sr-title">${esc(item.title)}</div>
-          <div class="sr-meta">${esc(item.cat)} &middot; ${ago(item.date)}</div>
+          <div class="sr-meta">${esc(item.cat)} &middot; ${ago(item.date)} ${isBuiltIn ? "&middot; <em style='color:var(--muted)'>sample</em>" : ""}</div>
         </div>
         <span class="sr-type ${item.type === "video" ? "sr-type-video" : "sr-type-article"}">${item.type === "video" ? "Video" : "Article"}</span>
         <button class="btn-del" onclick="deleteContent('${item.id}')">Delete</button>
