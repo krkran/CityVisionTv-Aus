@@ -114,7 +114,7 @@
         <div class="status-bar">
           <span>Signed in as <em>Admin</em></span>
           <div style="display:flex;gap:8px;align-items:center">
-            <button onclick="toggleTokenPanel()" style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--violet);background:none;border:1px solid var(--violet);padding:4px 10px;cursor:pointer;font-family:inherit">&#9889; GitHub Token</button>
+            <button onclick="debugJsonBin()" style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--sand2);padding:4px 10px;cursor:pointer;font-family:inherit" title="Debug connection">&#128269; Debug</button><button onclick="toggleTokenPanel()" style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--violet);background:none;border:1px solid var(--violet);padding:4px 10px;cursor:pointer;font-family:inherit">&#9889; Setup</button>
             <button class="btn-signout" onclick="doSignout()">Sign Out</button>
           </div>
         </div>
@@ -523,24 +523,27 @@ async function fetchRemote() {
   var binId = getBinId();
   if (binId) {
     try {
-      // Always send master key if available — needed while bin is private
-      var fetchHeaders = { 'X-Bin-Meta': 'false' };
       var mk = getJsonBinWriteKey();
+      var fetchHeaders = {};
       if (mk) fetchHeaders['X-Master-Key'] = mk;
       var r = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', { headers: fetchHeaders });
       if (r.ok) {
         var data = await r.json();
-        // X-Bin-Meta:false returns record directly, not wrapped
-        var record = Array.isArray(data) ? data : (data.record || data);
-        if (Array.isArray(record)) {
+        // JSONBin wraps in {record: [...], metadata: {...}}
+        var record = data.record !== undefined ? data.record : data;
+        if (Array.isArray(record) && record.length > 0) {
           REMOTE = record;
           renderAll();
+          console.log('Loaded', record.length, 'articles from JSONBin');
           return;
+        } else {
+          console.warn('JSONBin returned empty or unexpected:', JSON.stringify(data).substring(0,200));
         }
       } else {
-        console.warn('JSONBin fetch status:', r.status);
+        var errText = await r.text();
+        console.warn('JSONBin fetch failed:', r.status, errText.substring(0,200));
       }
-    } catch(e) { console.warn('JSONBin fetch failed:', e); }
+    } catch(e) { console.warn('JSONBin fetch error:', e); }
   }
   // Fallback: GitHub raw
   try {
@@ -548,7 +551,7 @@ async function fetchRemote() {
     var r2 = await fetch(url);
     if (r2.ok) {
       var ghData = await r2.json();
-      if (Array.isArray(ghData)) { REMOTE = ghData; renderAll(); }
+      if (Array.isArray(ghData)) { REMOTE = ghData; renderAll(); console.log('Loaded', ghData.length, 'articles from GitHub'); }
     }
   } catch(e2) {}
 }
@@ -748,15 +751,18 @@ function renderAdminLists(){
   function renderList(items,el){
     if(!items.length){el.innerHTML='<div class="empty-list">Nothing here yet.</div>';return;}
     el.innerHTML=items.map(function(item){
-      var isLocal=!!local.find(function(u){return u.id===item.id;});
-      return '<div class="story-row"><div class="sr-info"><div class="sr-title">'+esc(item.title)+'</div><div class="sr-meta">'+esc(item.cat)+' &middot; '+ago(item.date)+'</div></div><span class="sr-type '+(item.type==='video'?'sr-type-video':'sr-type-article')+'">'+(item.type==='video'?'Video':'Article')+'</span>'+(isLocal?'<button class="btn-edit" onclick="editContent(\''+item.id+'\')">Edit</button>':'')+'<button class="btn-del" onclick="deleteContent(\''+item.id+'\')">Delete</button></div>';
+            // Show edit/delete for all articles when admin is logged in
+      return '<div class="story-row"><div class="sr-info"><div class="sr-title">'+esc(item.title)+'</div><div class="sr-meta">'+esc(item.cat)+' &middot; '+ago(item.date)+'</div></div><span class="sr-type '+(item.type==='video'?'sr-type-video':'sr-type-article')+'">'+(item.type==='video'?'Video':'Article')+'</span><button class="btn-edit" onclick="editContent(\''+item.id+'\')">Edit</button><button class="btn-del" onclick="deleteContent(\''+item.id+'\')">Delete</but>';
     }).join('');
   }
   renderList(articles,document.getElementById('articleList'));
   renderList(videos,document.getElementById('videoList'));
 }
 function editContent(id){
-  var item=loadLocal().find(function(d){return d.id===id;}); if(!item) return;
+  // Look in both local storage AND remote (JSONBin) articles
+  var item=loadLocal().find(function(d){return d.id===id;});
+  if(!item) item=getAllContent().find(function(d){return d.id===id;});
+  if(!item) return;
   pubType=item.type;
   document.getElementById('manageView').style.display='none';
   document.getElementById('publishView').style.display='block';
@@ -777,14 +783,20 @@ function editContent(id){
   document.getElementById('fSubmitBtn').textContent='Save Changes';
 }
 function deleteContent(id){
-  if(!confirm('Delete this content? Cannot be undone.')) return;
+  if(!confirm('Delete this content? This cannot be undone.')) return;
+  // Remove from local storage if present
   var local=loadLocal();
-  var isLocal=!!local.find(function(d){return d.id===id;});
-  if(isLocal) saveLocal(local.filter(function(d){return d.id!==id;}));
-  else{var h=loadHidden();if(!h.includes(id)){h.push(id);saveHidden(h);}}
+  saveLocal(local.filter(function(d){return d.id!==id;}));
+  // Remove from REMOTE cache immediately
+  if(REMOTE) REMOTE=REMOTE.filter(function(d){return d.id!==id;});
   renderAdminLists();renderAll();
-  toast('Deleted.',false);
-  if(getJsonBinWriteKey()) autoDeleteFromLive(id);
+  toast('Deleting...', false);
+  // Delete from JSONBin (live for everyone)
+  if(getJsonBinWriteKey()){
+    autoDeleteFromLive(id);
+  } else {
+    toast('Deleted locally only. Add JSONBin key to delete for everyone.', false);
+  }
 }
 function openPublishForm(type){
   pubType=type;
@@ -941,10 +953,15 @@ function publishContent(){
   if(editId){var idx=data.findIndex(function(d){return d.id===editId;});if(idx>=0)data[idx]=item;else data.unshift(item);}
   else data.unshift(item);
   saveLocal(data);
+  // Also update REMOTE cache immediately so edit/delete work right away
+  if(REMOTE) {
+    var ri=REMOTE.findIndex(function(d){return d.id===item.id;});
+    if(ri>=0) REMOTE[ri]=item; else REMOTE.unshift(item);
+  }
   document.getElementById('fSubmitBtn').dataset.editId='';
   document.getElementById('fSubmitBtn').textContent='Publish Now';
   closePublishForm();renderAll();
-  toast(editId?'Article updated! Publishing to GitHub...':'Saved! Publishing to GitHub...',true);
+  toast(editId?'Updating...':'Publishing...', true);
   autoPublishToLive(item,!!editId);
 }
 
@@ -989,6 +1006,42 @@ function loadShowLogos() {
       img.style.display = 'block';
     }
   });
+}
+
+
+function debugJsonBin() {
+  var binId = getBinId();
+  var mk    = getJsonBinWriteKey();
+  var info  = 'Bin ID: ' + (binId || 'NOT SET') + '\n';
+  info += 'Master Key: ' + (mk ? mk.substring(0,12)+'...' : 'NOT SET') + '\n';
+  info += 'REMOTE articles: ' + (REMOTE ? REMOTE.length : 'null') + '\n';
+  info += 'Local articles: ' + loadLocal().length + '\n\n';
+  info += 'Testing JSONBin fetch now... check browser console (F12).';
+  alert(info);
+  // Also do a live test
+  if (binId) {
+    var h = {};
+    if (mk) h['X-Master-Key'] = mk;
+    fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {headers: h})
+      .then(function(r) {
+        console.log('JSONBin status:', r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        console.log('JSONBin full response:', data);
+        var record = data.record !== undefined ? data.record : data;
+        console.log('Parsed record:', Array.isArray(record) ? record.length + ' articles' : 'NOT AN ARRAY: ' + typeof record);
+        if (Array.isArray(record)) {
+          alert('JSONBin OK! Found ' + record.length + ' articles.\nFirst: ' + (record[0] ? record[0].title : 'none'));
+        } else {
+          alert('JSONBin returned unexpected data.\nSee console (F12) for details.');
+        }
+      })
+      .catch(function(err) {
+        console.error('JSONBin error:', err);
+        alert('JSONBin fetch error: ' + err.message);
+      });
+  }
 }
 
 // ── RENDER ALL ──
