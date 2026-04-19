@@ -637,18 +637,12 @@ input,textarea,select{font-family:inherit}
         <!-- SETUP PANEL -->
         <div class="setup-panel" id="setupPanel" style="display:none">
           <h4>&#9889; Live Publishing Setup</h4>
-          <p>Paste your <a href="https://jsonbin.io" target="_blank" style="color:var(--violet);font-weight:700">JSONBin.io</a> Master Key to publish articles live for everyone instantly. Your bin ID is already hardcoded.</p>
+          <p>Paste your <a href="https://github.com/settings/tokens/new?scopes=repo&description=CityVisionTV" target="_blank" style="color:var(--violet);font-weight:700">GitHub Personal Access Token</a> (repo scope, No Expiration) to publish articles live for everyone.</p>
           <div class="setup-row">
-            <input type="password" class="setup-input" id="jbKeyInput" placeholder="$2a$10$xxxxxxxxxxxxxxxxxxxx">
+            <input type="password" class="setup-input" id="jbKeyInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
             <button class="btn-setup" onclick="saveJbKeyFromUI()">Save Key</button>
           </div>
-          <div style="border-top:1px solid var(--sand);padding-top:10px;margin-top:4px">
-            <p style="font-size:11px;color:var(--muted);margin-bottom:8px">GitHub token (for photo uploads to your repo — optional):</p>
-            <div class="setup-row">
-              <input type="password" class="setup-input" id="ghTokInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-              <button class="btn-setup" style="background:var(--ink)" onclick="saveGhTokenFromUI()">Save</button>
-            </div>
-          </div>
+
           <div class="setup-status" id="setupStatus"></div>
         </div>
 
@@ -770,12 +764,10 @@ input,textarea,select{font-family:inherit}
 var GH_REPO   = 'krkran/cityvision';
 var GH_BRANCH = 'main';
 var IMG_BASE  = 'https://raw.githubusercontent.com/krkran/cityvision/main/images/';
-var BIN_ID    = '69e4bb5d10716a4d5de5cd3e';  // JSONBin bin ID
 var ADMIN_PW  = 'cvtv2025';
-var LS_ART    = 'cvtv_articles_v6';
-var LS_JB_KEY = 'cvtv_jb_master';
+var LS_ART    = 'cvtv_articles_v7';
 var LS_GH_TOK = 'cvtv_gh_token';
-var LS_HIDDEN = 'cvtv_hidden_v6';
+var LS_HIDDEN = 'cvtv_hidden_v7';
 
 // STATE
 var REMOTE      = null;   // articles from JSONBin
@@ -785,10 +777,9 @@ var curFilter   = 'all';
 var curPage     = 1;
 var PER         = 10;
 
-// KEYS
-function getJbKey() { return localStorage.getItem(LS_JB_KEY) || ''; }
-function setJbKey(k){ localStorage.setItem(LS_JB_KEY, k); }
-function getGhTok()  { return localStorage.getItem(LS_GH_TOK) || ''; }
+// KEYS  
+function getGhTok() { return localStorage.getItem(LS_GH_TOK) || ''; }
+function setGhTok(t){ localStorage.setItem(LS_GH_TOK, t); }
 
 // LOCAL STORAGE
 function loadLocal()  { try { return JSON.parse(localStorage.getItem(LS_ART) || '[]'); } catch(e){ return []; } }
@@ -812,51 +803,59 @@ function getAllContent() {
   return all;
 }
 
-// FETCH FROM JSONBIN
+// FETCH ARTICLES — jsDelivr CDN (fast, global, free, no auth)
 async function fetchRemote() {
-  try {
-    var headers = {};
-    var mk = getJbKey();
-    if(mk) headers['X-Master-Key'] = mk;
-    var resp = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID + '/latest', { headers: headers });
-    if(resp.ok) {
-      var data = await resp.json();
-      // JSONBin returns { record: [...], metadata: {...} }
-      var articles = Array.isArray(data.record) ? data.record : (Array.isArray(data) ? data : null);
-      if(articles) {
-        REMOTE = articles;
-        renderAll();
-        console.log('[CVTV] Loaded', articles.length, 'articles from JSONBin');
-        return;
+  var urls = [
+    'https://cdn.jsdelivr.net/gh/krkran/cityvision@main/articles.json',
+    'https://raw.githubusercontent.com/krkran/cityvision/main/articles.json?t=' + Date.now()
+  ];
+  for (var i = 0; i < urls.length; i++) {
+    try {
+      var r = await fetch(urls[i]);
+      if (r.ok) {
+        var data = await r.json();
+        if (Array.isArray(data)) {
+          REMOTE = data;
+          renderAll();
+          return;
+        }
       }
-    } else {
-      console.warn('[CVTV] JSONBin returned', resp.status);
-    }
-  } catch(err) {
-    console.warn('[CVTV] JSONBin fetch error:', err.message);
+    } catch(e) {}
   }
-  // Fallback: GitHub (may be cached)
-  try {
-    var r2 = await fetch('https://raw.githubusercontent.com/'+GH_REPO+'/'+GH_BRANCH+'/articles.json?t='+Date.now());
-    if(r2.ok) {
-      var gh = await r2.json();
-      if(Array.isArray(gh)) { REMOTE = gh; renderAll(); console.log('[CVTV] Loaded', gh.length, 'from GitHub fallback'); }
-    }
-  } catch(e2){}
 }
 
-// PUBLISH TO JSONBIN
-async function pushToJsonBin(articles) {
-  var mk = getJbKey();
-  if(!mk) throw new Error('No JSONBin key set. Open admin > Setup to add your key.');
-  var resp = await fetch('https://api.jsonbin.io/v3/b/' + BIN_ID, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': mk },
-    body: JSON.stringify(articles)
-  });
-  if(!resp.ok) {
-    var err = await resp.json();
-    throw new Error(err.message || ('JSONBin error ' + resp.status));
+// SAFE BASE64 FOR UNICODE
+function toB64(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(m,p){return String.fromCharCode('0x'+p);}));
+}
+
+// PUBLISH TO GITHUB — writes articles.json to repo
+async function pushToGitHub(articles) {
+  var tok = getGhTok();
+  if (!tok) throw new Error('No GitHub token set. Go to Admin > Setup and add your GitHub Personal Access Token.');
+  var api = 'https://api.github.com/repos/krkran/cityvision/contents/articles.json';
+  var headers = {
+    'Authorization': 'token ' + tok,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+  // Get current file SHA (needed for update)
+  var sha = null;
+  try {
+    var gr = await fetch(api + '?ref=main', {headers: headers});
+    if (gr.ok) { var gd = await gr.json(); sha = gd.sha; }
+  } catch(e) {}
+  // Push
+  var body = {
+    message: 'update articles.json via CityVision admin',
+    content: toB64(JSON.stringify(articles, null, 2)),
+    branch: 'main'
+  };
+  if (sha) body.sha = sha;
+  var pr = await fetch(api, {method: 'PUT', headers: headers, body: JSON.stringify(body)});
+  if (!pr.ok) {
+    var pe = await pr.json();
+    throw new Error(pe.message || ('GitHub error ' + pr.status));
   }
   return true;
 }
@@ -1038,7 +1037,7 @@ function showManage(){
   document.getElementById('adminPublish').style.display='none';
   document.getElementById('adminManage').style.display='block';
   // Show setup panel if no JB key
-  var hasKey=!!getJbKey();
+  var hasKey=!!getGhTok();
   document.getElementById('setupPanel').style.display=hasKey?'none':'block';
   document.getElementById('setupStatus').textContent=hasKey?'JSONBin key active — articles publish live instantly.':'';
   document.getElementById('setupStatus').style.color=hasKey?'#166534':'#72706c';
@@ -1048,23 +1047,13 @@ function toggleSetup(){
   var p=document.getElementById('setupPanel');
   p.style.display=p.style.display==='none'?'block':'none';
 }
-function saveJbKeyFromUI(){
-  var k=document.getElementById('jbKeyInput').value.trim();
-  if(!k){document.getElementById('setupStatus').textContent='Please enter your JSONBin Master Key.';document.getElementById('setupStatus').style.color='#c01c1c';return;}
-  setJbKey(k);
+
+  setGhTok(t);
   document.getElementById('jbKeyInput').value='';
-  document.getElementById('setupStatus').textContent='Key saved! Articles will now publish live.';
+  document.getElementById('setupStatus').textContent='GitHub token saved! Ready to publish live.';
   document.getElementById('setupStatus').style.color='#166534';
   document.getElementById('setupPanel').style.display='none';
-  toast('JSONBin key saved. Ready to publish!', true);
-}
-function saveGhTokenFromUI(){
-  var t=document.getElementById('ghTokInput').value.trim();
-  if(!t) return;
-  localStorage.setItem(LS_GH_TOK, t);
-  document.getElementById('ghTokInput').value='';
-  toast('GitHub token saved. Photo uploads enabled.', true);
-}
+  toast('GitHub token saved. Ready to publish!', true);
 
 function switchAdminTab(tab, el){
   document.querySelectorAll('.atab').forEach(function(t){t.classList.remove('on');});
@@ -1123,10 +1112,10 @@ function delItem(id){
   saveLocal(loadLocal().filter(function(d){return String(d.id)!==String(id);}));
   renderAll(); renderAdminList();
   // Push deletion to JSONBin
-  var mk=getJbKey();
+  var mk=getGhTok();
   if(mk){
     var all=getAllContent();
-    pushToJsonBin(all).then(function(){toast('Deleted for everyone.',false);}).catch(function(e){toast('Deleted locally. JSONBin error: '+e.message,false);});
+    pushToGitHub(all).then(function(){toast('Deleted for everyone.',false);}).catch(function(e){toast('Deleted locally. JSONBin error: '+e.message,false);});
   } else {
     toast('Deleted locally only.',false);
   }
@@ -1168,7 +1157,7 @@ async function uploadToImgur(file){
   setDZ('<div class="dz-icon">&#8987;</div><div class="dz-text">Uploading to Imgur...</div><div class="dz-sub">Please wait</div>', true);
   try {
     var fd=new FormData(); fd.append('image',file);
-    var r=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{'Authorization':'Client-ID 546c25a59c58ad7'},body:fd});
+    var r=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{'Authorization':'Client-ID f0ea04148a54268'},body:fd});
     if(!r.ok) throw new Error('Imgur returned '+r.status);
     var d=await r.json();
     if(!d.success) throw new Error(d.data.error||'Imgur upload failed');
@@ -1270,14 +1259,18 @@ function doPublish(){
   toast('Publishing...', true);
   // Push to JSONBin
   var allArticles=getAllContent();
-  var mk=getJbKey();
-  if(!mk){
-    toast('Saved locally. Add JSONBin key (Admin > Setup) to publish for everyone.', false);
-    saveLocal(loadLocal().concat([item]));
+  var tok=getGhTok();
+  if(!tok){
+    toast('Saved locally. Add your GitHub token in Admin > Setup to publish for everyone.', false);
+    // Save to local so it shows on this device
+    var loc=loadLocal();
+    var li=loc.findIndex(function(d){return d.id===item.id;});
+    if(li>=0) loc[li]=item; else loc.unshift(item);
+    saveLocal(loc);
     return;
   }
   document.getElementById('pubOverlay').classList.add('show');
-  pushToJsonBin(allArticles)
+  pushToGitHub(allArticles)
     .then(function(){
       document.getElementById('pubOverlay').classList.remove('show');
       toast('Published! Visible to everyone now.', true);
