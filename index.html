@@ -173,22 +173,18 @@
           </div>
           <div id="imgPanelUpload">
             <div id="imgDropZone" onclick="document.getElementById('imgFileInput').click()"
-              style="border:2px dashed var(--sand2);padding:24px;text-align:center;cursor:pointer;background:var(--off)"
-              ondragover="event.preventDefault()" ondrop="event.preventDefault();handleImgDrop(event)">
+              style="border:2px dashed var(--sand2);padding:20px;text-align:center;cursor:pointer;background:var(--off);transition:border-color .2s"
+              ondragover="event.preventDefault();this.style.borderColor='var(--violet)'"
+              ondragleave="this.style.borderColor='var(--sand2)'"
+              ondrop="event.preventDefault();this.style.borderColor='var(--sand2)';handleImgDrop(event)">
               <div style="font-size:28px;margin-bottom:8px">&#128247;</div>
               <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Click to choose a photo or drag here</div>
-              <div style="font-size:11px;color:var(--muted)">JPG, PNG, WEBP - any size</div>
+              <div style="font-size:11px;color:var(--muted)">JPG, PNG, WEBP &mdash; uploads to Imgur automatically</div>
             </div>
             <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImgFile(this)">
           </div>
           <div id="imgPanelUrl" style="display:none">
-            <input type="text" id="fImg" placeholder="Paste image URL (Imgur, Google Photos, direct .jpg link)..." style="width:100%;border:1px solid var(--sand2);padding:9px 11px;font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff;outline:none" oninput="previewImgUrl(this.value)">
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:10px 12px;margin-top:8px;font-size:11.5px;line-height:1.7;color:#0c4a6e">
-              <strong>Easiest way to get a photo URL:</strong><br>
-              1. Go to <a href="https://imgur.com/upload" target="_blank" style="color:#0369a1;font-weight:700">imgur.com/upload</a> (free, no account needed)<br>
-              2. Upload your photo &rarr; right-click the image &rarr; <strong>Copy image address</strong><br>
-              3. Paste the URL above. It will end in .jpg or .png
-            </div>
+            <input type="text" id="fImg" placeholder="Paste image URL..." style="width:100%;border:1px solid var(--sand2);padding:9px 11px;font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff;outline:none" oninput="previewImgUrl(this.value)">
           </div>
           <input type="hidden" id="fImgData" value="">
           <div id="imgPreviewWrap" style="display:none;margin-top:10px">
@@ -221,6 +217,16 @@
 </div>
 
 <script>
+var GH_REPO      = 'krkran/cityvision';
+var GH_BRANCH    = 'main';
+var GH_TOKEN_KEY = 'cvtv_gh_token';
+var ADMIN_PW     = 'cvtv2025';
+var LS           = 'cvtv_v5';
+var LS_HIDDEN    = 'cvtv_hidden_v5';
+var IMAGES_BASE  = 'https://raw.githubusercontent.com/krkran/cityvision/main/images/';
+
+// JSONBin.io — instant live database, no GitHub cache delay
+// Bin ID is set once after first publish, stored in 
 var GH_REPO      = 'krkran/cityvision';
 var GH_BRANCH    = 'main';
 var GH_TOKEN_KEY = 'cvtv_gh_token';
@@ -414,10 +420,19 @@ async function autoPublishToLive(item, isEdit) {
     var success = await publishToJsonBin(existing);
 
     if (success) {
+      // Make bin public so ALL devices can read without needing the master key
+      var binIdNow = getBinId();
+      var mkNow    = getJsonBinWriteKey();
+      if (binIdNow && mkNow) {
+        fetch('https://api.jsonbin.io/v3/b/' + binIdNow + '/meta/privacy', {
+          method: 'PUT',
+          headers: { 'X-Master-Key': mkNow, 'X-Bin-Private': 'false', 'Content-Type': 'application/json' }
+        }).catch(function(){});
+      }
       REMOTE = existing;
       renderAll();
       showPublishingOverlay(false);
-      toast('Published live! Visible to everyone instantly.', true);
+      toast('Published live! Visible to everyone.', true);
 
       // Also push to GitHub as backup (silent, best-effort)
       var ghToken = getToken();
@@ -498,22 +513,29 @@ function getAllContent() {
 }
 
 async function fetchRemote() {
-  // Primary: JSONBin (instant, no cache)
   var binId = getBinId();
   if (binId) {
     try {
-      var r = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest');
+      // Always send master key if available — needed while bin is private
+      var fetchHeaders = { 'X-Bin-Meta': 'false' };
+      var mk = getJsonBinWriteKey();
+      if (mk) fetchHeaders['X-Master-Key'] = mk;
+      var r = await fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', { headers: fetchHeaders });
       if (r.ok) {
         var data = await r.json();
-        if (Array.isArray(data.record)) {
-          REMOTE = data.record;
+        // X-Bin-Meta:false returns record directly, not wrapped
+        var record = Array.isArray(data) ? data : (data.record || data);
+        if (Array.isArray(record)) {
+          REMOTE = record;
           renderAll();
           return;
         }
+      } else {
+        console.warn('JSONBin fetch status:', r.status);
       }
     } catch(e) { console.warn('JSONBin fetch failed:', e); }
   }
-  // Fallback: GitHub raw (may be cached up to 10 min)
+  // Fallback: GitHub raw
   try {
     var url = 'https://raw.githubusercontent.com/'+GH_REPO+'/'+GH_BRANCH+'/articles.json?t='+Date.now();
     var r2 = await fetch(url);
@@ -781,13 +803,44 @@ function toggleTokenPanel(){
 }
 
 // ── IMAGE HANDLING ──
-function handleImgFile(input){
-  if(!input.files||!input.files[0]) return;
-  var file=input.files[0],token=getToken();
-  if(token){uploadImgToGitHub(file,token);return;}
-  var reader=new FileReader();
-  reader.onload=function(e){document.getElementById('fImgData').value=e.target.result;showImgPrev(e.target.result,file.name);};
-  reader.readAsDataURL(file);
+function handleImgFile(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  // Try GitHub upload if token is set
+  var token = getToken();
+  if (token) { uploadImgToGitHub(file, token); return; }
+  // Upload to Imgur anonymously (no account or key needed)
+  uploadToImgur(file);
+}
+
+async function uploadToImgur(file) {
+  var dz = document.getElementById('imgDropZone');
+  if (dz) dz.innerHTML = '<div style="font-size:20px;margin-bottom:8px">&#8987;</div><div style="font-size:13px;font-weight:600;color:var(--ink)">Uploading photo...</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Please wait</div>';
+  try {
+    var formData = new FormData();
+    formData.append('image', file);
+    var resp = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: { 'Authorization': 'Client-ID 546c25a59c58ad7' },
+      body: formData
+    });
+    if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+    var data = await resp.json();
+    if (!data.success) throw new Error(data.data.error || 'Upload failed');
+    var url = data.data.link;
+    document.getElementById('fImgData').value = url;
+    showImgPrev(url, file.name);
+    toast('Photo uploaded!', true);
+  } catch(err) {
+    toast('Photo upload failed, saving locally instead.', false);
+    // Fallback: base64
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('fImgData').value = e.target.result;
+      showImgPrev(e.target.result, file.name);
+    };
+    reader.readAsDataURL(file);
+  }
 }
 function handleImgDrop(e){var file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;handleImgFile({files:[file]});}
 async function uploadImgToGitHub(file,token){
@@ -917,6 +970,76 @@ function initReveal(){
   document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 }
 
+
+// ── SHOW LOGOS: Auto-detect from GitHub images folder ──
+var SHOW_LOGO_CACHE = {};
+
+async function loadShowLogos() {
+  try {
+    // Fetch the actual list of files in the images folder
+    var api = 'https://api.github.com/repos/' + GH_REPO + '/contents/images?ref=' + GH_BRANCH;
+    var resp = await fetch(api);
+    if (!resp.ok) return;
+    var files = await resp.json();
+    if (!Array.isArray(files)) return;
+
+    // Build a map: lowercase filename without extension -> download URL
+    var fileMap = {};
+    files.forEach(function(f) {
+      var name = f.name.toLowerCase().replace(/\.[^.]+$/, '').replace(/[-_ ]/g, '');
+      fileMap[name] = f.download_url;
+    });
+
+    // Map show names to files by fuzzy matching
+    var showMappings = {
+      'City Vision Reports': ['cityvisionreports','cvr','cityvisontv','cityreports','newslogo','cvtv'],
+      'Hamro Story':         ['hamrostory','hamro','hamrostorylogo'],
+      'Kurakani':            ['kurakani','kurakanilogo','kurakanishow'],
+      '8 Baje':              ['8baje','8baje','eightbaje','8bajelogo'],
+      'My Days in Nepal':    ['mydaysinnepal','mydaysnepal','daysnepal','mydayslogo'],
+      'Day in the Life':     ['dayinthelife','daylife','dayinlife','dayinthelifelogo']
+    };
+
+    var updated = false;
+    Object.keys(showMappings).forEach(function(showName) {
+      var keys = showMappings[showName];
+      for (var i = 0; i < keys.length; i++) {
+        if (fileMap[keys[i]]) {
+          SHOW_LOGO_CACHE[showName] = fileMap[keys[i]];
+          updated = true;
+          break;
+        }
+      }
+      // Also try: does any filename contain a key word?
+      if (!SHOW_LOGO_CACHE[showName]) {
+        var showLower = showName.toLowerCase().replace(/[-_ ]/g,'');
+        Object.keys(fileMap).forEach(function(fname) {
+          if (!SHOW_LOGO_CACHE[showName] && (fname.includes(showLower.substring(0,6)) || showLower.includes(fname.substring(0,6)))) {
+            SHOW_LOGO_CACHE[showName] = fileMap[fname];
+          }
+        });
+      }
+    });
+
+    if (updated) {
+      // Update show card images
+      document.querySelectorAll('.show-logo-img').forEach(function(img) {
+        var alt = img.alt;
+        if (SHOW_LOGO_CACHE[alt]) {
+          img.src = SHOW_LOGO_CACHE[alt];
+          img.style.display = 'block';
+        }
+      });
+    }
+    
+    // Log what we found for debugging
+    console.log('Show logos found:', SHOW_LOGO_CACHE);
+    console.log('All images in repo:', Object.keys(fileMap));
+  } catch(e) {
+    console.warn('Could not load show logos:', e);
+  }
+}
+
 // ── RENDER ALL ──
 function renderAll(){initTicker();renderHero();renderVideoBand();renderFeed();renderTrending();}
 
@@ -937,6 +1060,7 @@ initDates();
 initReveal();
 renderAll();
 fetchRemote();
+loadShowLogos();
 (function(){
   var params=new URLSearchParams(window.location.search);
   var artId=params.get('article');
@@ -945,7 +1069,16 @@ fetchRemote();
 // Poll for new articles every 30 seconds so all devices stay in sync
 setInterval(function() { fetchRemote(); }, 30000);
 
-
-</script>
-</body>
-</html>
+// If admin has master key and bin exists, make it public on load (fixes existing private bins)
+(function makeBinPublicOnLoad() {
+  var binId = getBinId();
+  var mk    = getJsonBinWriteKey();
+  if (binId && mk) {
+    fetch('https://api.jsonbin.io/v3/b/' + binId + '/meta/privacy', {
+      method: 'PUT',
+      headers: { 'X-Master-Key': mk, 'X-Bin-Private': 'false', 'Content-Type': 'application/json' }
+    }).then(function(r) {
+      if (r.ok) console.log('Bin set to public.');
+    }).catch(function(){});
+  }
+})();
