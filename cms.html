@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CityVision TV CMS</title>
+<style>
+body{font-family:Arial, sans-serif;margin:0;background:#f4f4f4;color:#111}
+header{background:#0c1829;color:#fff;padding:16px 20px;font-weight:bold}
+.container{max-width:1000px;margin:auto;padding:20px}
+.card{background:#fff;padding:16px;margin-bottom:16px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+input,textarea,select{width:100%;padding:10px;margin-top:6px;margin-bottom:12px;border:1px solid #ddd;border-radius:6px}
+button{padding:10px 14px;border:none;border-radius:6px;cursor:pointer}
+.btn{background:#c01c1c;color:#fff}
+.btn2{background:#111;color:#fff}
+.hidden{display:none}
+.article{padding:10px;border-bottom:1px solid #eee}
+small{color:#777}
+img{max-width:100%}
+.nav{display:flex;gap:10px;margin-bottom:10px}
+.nav button{background:#eee}
+.nav .active{background:#c01c1c;color:#fff}
+</style>
+</head>
+<body>
+
+<header>CityVision TV - Admin CMS</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login" class="card">
+<h2>Admin Login</h2>
+<input id="pass" type="password" placeholder="Enter password" />
+<button class="btn" onclick="login()">Login</button>
+<p id="err" style="color:red"></p>
+</div>
+
+<!-- CMS -->
+<div id="cms" class="hidden">
+
+<div class="nav">
+<button onclick="tab('new')" id="t1" class="active">New Article</button>
+<button onclick="tab('list')" id="t2">Manage</button>
+</div>
+
+<!-- NEW ARTICLE -->
+<div id="new" class="card">
+<h3>Create Article</h3>
+<input id="title" placeholder="Title" />
+<textarea id="content" rows="6" placeholder="Content"></textarea>
+<input id="image" placeholder="Image URL or GitHub path" />
+<select id="category">
+<option>News</option>
+<option>Podcast</option>
+<option>Community</option>
+</select>
+<button class="btn" onclick="publish()">Publish</button>
+</div>
+
+<!-- LIST -->
+<div id="list" class="card hidden">
+<h3>Articles</h3>
+<div id="articles"></div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+const PASSWORD="cityvision2026";
+const repo="CityVisionTv-Aus";
+const owner="krkran";
+const branch="main";
+
+function login(){
+ const p=document.getElementById('pass').value;
+ if(p===PASSWORD){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('cms').classList.remove('hidden');
+  load();
+ } else {
+  document.getElementById('err').innerText="Wrong password";
+ }
+}
+
+function tab(t){
+ document.getElementById('new').classList.add('hidden');
+ document.getElementById('list').classList.add('hidden');
+ document.getElementById(t).classList.remove('hidden');
+
+ document.getElementById('t1').classList.remove('active');
+ document.getElementById('t2').classList.remove('active');
+ if(t==='new')document.getElementById('t1').classList.add('active');
+ if(t==='list')document.getElementById('t2').classList.add('active');
+}
+
+async function publish(){
+ const title=document.getElementById('title').value;
+ const content=document.getElementById('content').value;
+ const image=document.getElementById('image').value;
+ const category=document.getElementById('category').value;
+
+ const article={
+  id:Date.now(),
+  title,content,image,category,date:new Date().toISOString()
+ };
+
+ let data=await fetchJSON();
+ data.unshift(article);
+ await save(data);
+ alert("Published!");
+ load();
+}
+
+async function fetchJSON(){
+ try{
+  let r=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/articles.json?`+Date.now());
+  return await r.json();
+ }catch(e){return [];}
+}
+
+async function save(data){
+ const token=prompt("Paste GitHub Token");
+ const url=`https://api.github.com/repos/${owner}/${repo}/contents/articles.json`;
+
+ let sha=null;
+ try{
+  let r=await fetch(url,{headers:{Authorization:"Bearer "+token}});
+  let j=await r.json();
+  sha=j.sha;
+ }catch(e){}
+
+ await fetch(url,{method:"PUT",headers:{
+  Authorization:"Bearer "+token,
+  "Content-Type":"application/json"
+ },body:JSON.stringify({
+  message:"update articles",
+  content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))),
+  sha
+ })});
+}
+
+async function load(){
+ let data=await fetchJSON();
+ let el=document.getElementById('articles');
+ el.innerHTML="";
+ data.forEach(a=>{
+  el.innerHTML+=`
+  <div class='article'>
+   <b>${a.title}</b><br>
+   <small>${a.category} - ${new Date(a.date).toLocaleString()}</small><br>
+   <img src='${a.image||""}'/><br>
+   <p>${a.content}</p>
+  </div>`;
+ });
+}
+</script>
+
+</body>
+</html>
