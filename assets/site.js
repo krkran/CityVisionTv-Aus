@@ -7,6 +7,10 @@
   var BASE = body.getAttribute('data-base') || '';
   var PAGE = body.getAttribute('data-page') || '';
   var ALL = [];           // published posts, newest first
+  var YT = [];            // videos from the YouTube channel (youtube.json)
+  var FEED = [];          // posts + long-form YouTube videos, newest first
+  var YT_UPLOADS = CFG.youtube ? 'UU' + CFG.youtube.channelId.slice(2) : '';
+  var YT_SUB = CFG.social.youtube + '?sub_confirmation=1';
   var LS = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -69,7 +73,35 @@
   });
 
   /* ---------- data ---------- */
+  function matchShow(title) {
+    var t = String(title || '').toLowerCase();
+    for (var i = 0; i < CFG.shows.length; i++) {
+      var k = CFG.shows[i].yt || [];
+      for (var j = 0; j < k.length; j++) if (t.indexOf(String(k[j]).toLowerCase()) > -1) return CFG.shows[i].id;
+    }
+    return '';
+  }
+  function ytToPost(v) {
+    var watch = 'https://www.youtube.com/watch?v=' + v.id;
+    return { id: 'yt-' + v.id, ytid: v.id, source: 'youtube', type: 'video', short: !!v.short, title: v.title,
+      summary: String(v.description || '').split('\n')[0].slice(0, 220), video: watch,
+      href: v.short ? 'https://www.youtube.com/shorts/' + v.id : watch, date: v.date, show: matchShow(v.title), category: 'culture', tags: [] };
+  }
+  function loadYT() {
+    return fetch(BASE + 'youtube.json?v=' + Math.floor(Date.now() / 600000), { cache: 'no-cache' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (d) { YT = (d.items || []).map(ytToPost).sort(function (a, b) { return new Date(b.date) - new Date(a.date); }); })
+      .catch(function () { YT = []; });
+  }
+  function ytLong() { return YT.filter(function (v) { return !v.short; }); }
+  function ytShorts() { return YT.filter(function (v) { return v.short; }); }
+  function byDate(a, b) { return new Date(b.date) - new Date(a.date); }
   function load() {
+    return Promise.all([loadPosts(), loadYT()]).then(function () {
+      FEED = ALL.concat(ytLong()).sort(byDate);
+    });
+  }
+  function loadPosts() {
     var bust = Math.floor(Date.now() / 60000);
     return fetch(BASE + 'articles.json?v=' + bust, { cache: 'no-cache' })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -87,26 +119,66 @@
     return f || list.filter(function (p) { return p.type !== 'update'; })[0] || list[0];
   }
 
-  /* ticker */
+  /* ticker: seamless, constant-speed marquee */
   function ticker() {
-    if (!ALL.length) return;
+    if (!FEED.length) return;
     var recentBreaking = ALL.filter(function (p) { return p.breaking && (Date.now() - new Date(p.date)) < 72 * 3600e3; });
-    var items = (recentBreaking.length ? recentBreaking : ALL).slice(0, 8);
+    var items = (recentBreaking.length ? recentBreaking : FEED).slice(0, 10);
     var label = recentBreaking.length ? 'Breaking' : 'Latest';
-    var links = items.map(function (p) { return '<a href="' + CV.postUrl(p, BASE) + '"><b>' + esc(CV.ago(p.date)) + '</b>' + esc(p.title) + '</a>'; }).join('');
+    var links = items.map(function (p) {
+      var yt = p.source === 'youtube';
+      return '<a class="tk-item" href="' + CV.postUrl(p, BASE) + '"><span class="tk-time">' + (yt ? I.play + 'New video' : esc(CV.ago(p.date))) + '</span><span class="tk-title">' + esc(p.title) + '</span></a><span class="tk-sep" aria-hidden="true"></span>';
+    }).join('');
     var tk = $('#ticker');
-    tk.innerHTML = '<div class="wrap ticker-in"><span class="ticker-label"><span class="pulse"></span>' + label + '</span><div class="ticker-track"><div class="ticker-move" style="--dur:' + Math.max(25, items.length * 8) + 's">' + links + links + '</div></div></div>';
+    tk.innerHTML = '<div class="wrap ticker-in"><span class="ticker-label"><span class="pulse"></span><span class="tl-text">' + label + '</span></span>' +
+      '<div class="ticker-track"><div class="ticker-move"><div class="tk-group">' + links + '</div></div></div></div>';
     tk.hidden = false;
+    marquee($('.ticker-track', tk), $('.ticker-move', tk));
+  }
+  function marquee(track, move) {
+    var group = move.firstChild, W = 0, x = 0, last = 0, paused = false, resumeT;
+    var SPEED = innerWidth < 720 ? 38 : 46; // pixels per second
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { track.classList.add('is-static'); return; }
+    function build() {
+      while (move.children.length > 1) move.removeChild(move.lastChild);
+      W = group.getBoundingClientRect().width;
+      if (!W) return;
+      var copies = Math.ceil(track.clientWidth / W) + 1;
+      for (var i = 0; i < copies; i++) {
+        var c = group.cloneNode(true); c.setAttribute('aria-hidden', 'true');
+        $$('a', c).forEach(function (a) { a.tabIndex = -1; });
+        move.appendChild(c);
+      }
+      x = W ? x % W : 0;
+    }
+    function frame(t) {
+      var dt = last ? Math.min(50, t - last) : 0; last = t;
+      if (!paused && W) {
+        x -= SPEED * dt / 1000;
+        if (x <= -W) x += W;
+        move.style.transform = 'translate3d(' + x.toFixed(2) + 'px,0,0)';
+      }
+      requestAnimationFrame(frame);
+    }
+    function pause() { paused = true; clearTimeout(resumeT); }
+    function play() { clearTimeout(resumeT); resumeT = setTimeout(function () { paused = false; }, 250); }
+    track.addEventListener('mouseenter', pause); track.addEventListener('mouseleave', play);
+    track.addEventListener('focusin', pause); track.addEventListener('focusout', play);
+    track.addEventListener('touchstart', function () { pause(); clearTimeout(resumeT); resumeT = setTimeout(function () { paused = false; }, 2500); }, { passive: true });
+    var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(build, 200); });
+    build();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
+    requestAnimationFrame(frame);
   }
 
   /* what's new (bell) */
   function seenAt() { var v = LS.get('cv_seen'); return v ? +v : Date.now() - 7 * 86400e3; }
   function bell() {
     var since = seenAt();
-    var fresh = ALL.filter(function (p) { return new Date(p.date).getTime() > since; });
+    var fresh = FEED.filter(function (p) { return new Date(p.date).getTime() > since; });
     var dot = $('.bell-dot');
     if (fresh.length) { dot.hidden = false; dot.textContent = fresh.length > 9 ? '9+' : fresh.length; } else dot.hidden = true;
-    var list = ALL.slice(0, 8);
+    var list = FEED.slice(0, 8);
     $('#bpList').innerHTML = list.length ? list.map(function (p) {
       var isNew = new Date(p.date).getTime() > since;
       return '<a class="bp-item" href="' + CV.postUrl(p, BASE) + '">' + CV.media(p, BASE) + '<span><strong>' + (isNew ? '<span class="bp-new">NEW</span>' : '') + esc(p.title) + '</strong><small>' + esc(CV.kicker(p)) + ' &middot; ' + CV.ago(p.date) + '</small></span></a>';
@@ -118,7 +190,7 @@
   function search(q, list) {
     q = (q || '').trim().toLowerCase(); if (!q) return [];
     var words = q.split(/\s+/);
-    return (list || ALL).map(function (p) {
+    return (list || ALL.concat(YT)).map(function (p) {
       var hay = (p.title + ' ' + p.summary + ' ' + CV.kicker(p) + ' ' + (p.author || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
       var score = 0; words.forEach(function (w) { if (hay.indexOf(w) > -1) score++; if (p.title.toLowerCase().indexOf(w) > -1) score++; });
       return { p: p, s: words.every(function (w) { return hay.indexOf(w) > -1; }) ? score : 0 };
@@ -135,33 +207,50 @@
   var lb = document.createElement('div'); lb.className = 'lb'; lb.setAttribute('aria-hidden', 'true');
   lb.innerHTML = '<div class="lb-in"><div class="lb-top"><h3></h3><button class="icon-btn" data-close aria-label="Close video">' + I.close + '</button></div><div class="lb-player"></div><div class="lb-foot"></div></div>';
   body.appendChild(lb);
-  document.addEventListener('click', function (e) {
-    var a = e.target.closest('[data-lightbox] .is-video a');
-    if (!a || e.metaKey || e.ctrlKey) return;
-    var href = a.getAttribute('href');
-    var p = ALL.filter(function (x) { return CV.postUrl(x, BASE) === href; })[0];
-    if (!p || !CV.ytId(p.video)) return;
-    e.preventDefault();
+  function openVideo(p, moreHref, moreLabel) {
+    var id = CV.ytId(p.video); if (!id) return false;
+    $('.lb-in', lb).classList.toggle('is-short', !!p.short);
     $('h3', lb).textContent = p.title;
-    $('.lb-player', lb).innerHTML = CV.videoEmbed(p.video).replace('?rel=0', '?rel=0&autoplay=1');
-    $('.lb-foot', lb).innerHTML = '<a class="btn btn--light btn--sm" href="' + href + '">Read the full story ' + I.arrow + '</a>';
+    $('.lb-player', lb).innerHTML = '<div class="embed' + (p.short ? ' embed--short' : '') + '"><iframe src="https://www.youtube-nocookie.com/embed/' + id + '?rel=0&autoplay=1&playsinline=1" title="' + esc(p.title) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+    $('.lb-foot', lb).innerHTML = moreHref ? '<a class="btn btn--light btn--sm" href="' + moreHref + '">' + moreLabel + ' ' + I.arrow + '</a>' :
+      '<a class="btn btn--red btn--sm" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a> <a class="btn btn--ghost btn--sm lb-ghost" href="' + esc(p.href) + '" target="_blank" rel="noopener">Open on YouTube</a>';
     openLayer(lb);
+    return true;
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var href = a.getAttribute('href');
+    var v = YT.filter(function (x) { return x.href === href; })[0];
+    if (v) { if (openVideo(v)) { e.preventDefault(); closeBell(); } return; }
+    if (a.closest('[data-lightbox] .is-video')) {
+      var p = ALL.filter(function (x) { return CV.postUrl(x, BASE) === href; })[0];
+      if (p && openVideo(p, href, 'Read the full story')) e.preventDefault();
+    }
   });
+  function closeBell() { var b = $('#bellPanel'); if (b) { b.classList.remove('open'); } }
+  function shortCard(p) {
+    return '<a class="short" href="' + esc(p.href) + '"><div class="media media--short"><img src="https://i.ytimg.com/vi/' + p.ytid + '/hqdefault.jpg" alt="" loading="lazy"><span class="play">' + I.play + '</span></div><span class="short-t">' + esc(p.title) + '</span></a>';
+  }
+  function shortsRail(list, title) {
+    if (!list.length) return '';
+    return '<div class="shorts"><div class="shorts-h"><h3>' + (title || 'Shorts') + '</h3><a class="lnk" href="' + CFG.social.youtube + '/shorts" target="_blank" rel="noopener">More Shorts ' + I.arrow + '</a></div><div class="shorts-rail">' + list.slice(0, 12).map(shortCard).join('') + '</div></div>';
+  }
 
   /* ---------- pages ---------- */
   var R = {};
 
   R.home = function () {
     var root = $('#home');
-    if (!ALL.length) {
+    if (!FEED.length) {
       root.innerHTML = '<section class="wrap top"><div class="empty"><h3>Welcome to CityVision TV</h3><p>Our newsroom is getting ready. New stories are on the way.</p></div></section>';
       return;
     }
     var used = {};
-    var lead = pickFeatured(ALL); used[lead.id] = 1;
-    var rest = ALL.filter(function (p) { return !used[p.id] && p.type !== 'update'; });
+    var lead = pickFeatured(ALL.length ? ALL : FEED); used[lead.id] = 1;
+    var rest = (ALL.length > 2 ? ALL : FEED).filter(function (p) { return !used[p.id] && p.type !== 'update'; });
     var mid = rest.slice(0, 2); mid.forEach(function (p) { used[p.id] = 1; });
-    var live = ALL.slice(0, 7);
+    var live = FEED.slice(0, 7);
     var row = ALL.filter(function (p) { return !used[p.id] && p.type !== 'update'; }).slice(0, 4);
     row.forEach(function (p) { used[p.id] = 1; });
 
@@ -173,16 +262,16 @@
       '</div><a class="lnk live-more" href="' + BASE + 'updates.html">All updates ' + I.arrow + '</a></aside></div>' +
       (row.length >= 2 ? '<div class="row4 row4--n' + row.length + '">' + row.map(function (p) { return card(p, 'std'); }).join('') + '</div>' : '') + '</section>';
 
-    // Watch band
-    var vids = ALL.filter(function (p) { return p.type === 'video' || p.video; });
-    h += '<section class="watch" data-lightbox><div class="wrap"><div class="sec-h"><h2><span class="dot"></span>Watch</h2><a class="lnk" href="' + BASE + 'section.html?type=video">All videos ' + I.arrow + '</a></div>';
+    // Watch band: newest videos from our posts and the YouTube channel
+    var vids = ALL.filter(function (p) { return p.type === 'video' || p.video; }).concat(ytLong()).sort(byDate);
+    var shorts = ytShorts();
+    h += '<section class="watch" data-lightbox><div class="wrap"><div class="sec-h"><h2><span class="dot"></span>Watch</h2><div class="sec-h-r"><a class="btn btn--red btn--sm" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="lnk" href="' + BASE + 'section.html?type=video">All videos ' + I.arrow + '</a></div></div>';
     if (vids.length) {
-      h += '<div class="watch-grid"><div>' + card(vids[0], 'lead') + '</div><div class="watch-side">' + vids.slice(1, 4).map(function (p) { return card(p, 'row'); }).join('') +
-        (vids.length < 4 ? '<a class="btn btn--light" href="' + CFG.social.youtube + '" target="_blank" rel="noopener">' + I.yt + ' More on our YouTube channel</a>' : '') + '</div></div>';
-    } else {
-      h += '<div class="watch-empty"><div><span class="eyebrow eyebrow--light">CityVision on YouTube</span><h3>Documentaries, talk shows and community stories</h3><p>Watch Hamro Story, 8 Baje, My Days in Nepal and more on our channel.</p><a class="btn btn--red" href="' + CFG.social.youtube + '" target="_blank" rel="noopener">' + I.yt + ' Watch on YouTube</a></div><a class="watch-plate" href="' + CFG.social.youtube + '" target="_blank" rel="noopener" aria-label="Watch on YouTube"><span>' + I.play + '</span></a></div>';
+      h += '<div class="watch-grid"><div>' + card(vids[0], 'lead') + '</div><div class="watch-side">' + vids.slice(1, 4).map(function (p) { return card(p, 'row'); }).join('') + '</div></div>';
+    } else if (YT_UPLOADS) {
+      h += '<div class="watch-empty"><div><span class="eyebrow eyebrow--light">CityVision on YouTube</span><h3>Documentaries, talk shows and community stories</h3><p>Watch Hamro Story, Kurakani, My Days in Nepal and more.</p><a class="btn btn--red" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe on YouTube</a></div><div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/videoseries?list=' + YT_UPLOADS + '" title="CityVision TV on YouTube" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div></div>';
     }
-    h += '</div></section>';
+    h += shortsRail(shorts) + '</div></section>';
 
     // Shows rail
     h += '<section class="wrap sec"><div class="sec-h"><h2><span class="dot" style="--k:var(--indigo)"></span>Our shows</h2><a class="lnk" href="' + BASE + 'shows.html">All shows ' + I.arrow + '</a></div><div class="shows-rail">' +
@@ -207,9 +296,14 @@
   };
 
   function sidebar(exclude) {
-    var recent = ALL.filter(function (p) { return p.id !== exclude; }).slice(0, 5);
+    var recent = FEED.filter(function (p) { return p.id !== exclude; }).slice(0, 5);
     var kur = CV.showById('kurakani');
-    return '<div class="panel"><div class="panel-h">Most recent</div><div class="num-list">' + recent.map(function (p) { return card(p, 'text'); }).join('') + '</div></div>' +
+    var latest = ytLong()[0];
+    var ytSrc = latest ? 'https://www.youtube-nocookie.com/embed/' + latest.ytid + '?rel=0' : (YT_UPLOADS ? 'https://www.youtube-nocookie.com/embed/videoseries?list=' + YT_UPLOADS : '');
+    var ytCard = ytSrc ? '<div class="ytc" style="margin-top:24px"><div class="ytc-top"><span class="ytc-ic">' + I.yt + '</span><div><span class="eyebrow">Latest on YouTube</span><h3>' + (latest ? esc(latest.title) : 'CityVision TV') + '</h3></div></div>' +
+      '<div class="ytc-player"><iframe src="' + ytSrc + '" title="Latest CityVision TV video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>' +
+      '<div class="ytc-actions"><a class="ytc-sub" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="ytc-more" href="' + BASE + 'section.html?type=video">More videos</a></div></div>' : '';
+    return '<div class="panel"><div class="panel-h">Most recent</div><div class="num-list">' + recent.map(function (p) { return card(p, 'text'); }).join('') + '</div></div>' + ytCard +
       '<div class="pod" style="margin-top:24px"><div class="pod-top"><img src="' + BASE + kur.logo + '" alt=""><div><span class="eyebrow">Podcast</span><h3>Kurakani</h3></div></div>' +
       '<iframe title="Kurakani on Spotify" src="https://open.spotify.com/embed/show/5AyBIxWf3yroPNncxRpsVw?utm_source=generator&theme=0" height="152" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>' +
       '<a class="pod-btn" href="' + CFG.social.spotify + '" target="_blank" rel="noopener">' + I.sp + ' Listen on Spotify</a></div>' +
@@ -218,17 +312,19 @@
 
   R.section = function () {
     var c = qs('c'), show = qs('show'), type = qs('type'), q = qs('q');
+    var extraShorts = [];
     var head = $('#phead'), list = ALL.slice(), title = 'All stories', desc = 'Everything from the CityVision TV newsroom.';
     var s = show && CV.showById(show), cat = c && CV.catById(c);
     if (s) {
-      list = list.filter(function (p) { return p.show === s.id; });
+      list = list.filter(function (p) { return p.show === s.id; }).concat(ytLong().filter(function (v) { return v.show === s.id; })).sort(byDate);
+      extraShorts = ytShorts().filter(function (v) { return v.show === s.id; });
       document.title = s.name + ' | CityVision TV';
       head.outerHTML = '<header class="phead phead--show" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="wrap"><div class="ps-logo">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="' + esc(s.name) + '">' : '<b>' + esc(s.name) + '</b>') + '</div><div><span class="eyebrow">' + esc(s.format) + '</span><h1 style="margin:10px 0;font:800 clamp(32px,5vw,54px)/1.02 var(--f-ui);letter-spacing:-.03em">' + esc(s.name) + '</h1><p>' + esc(s.desc) + '</p><div class="ps-actions">' +
         (s.link ? '<a class="btn btn--ink" href="' + s.link + '" target="_blank" rel="noopener">' + I.sp + ' Listen on Spotify</a>' : '<a class="btn btn--red" href="' + CFG.social.youtube + '" target="_blank" rel="noopener">' + I.yt + ' Watch on YouTube</a>') +
         '<a class="btn btn--ghost" href="' + BASE + 'contact.html?topic=feature">Be on the show</a></div></div></div></header>';
     } else {
       if (cat) { list = list.filter(function (p) { return p.category === cat.id; }); title = cat.name; desc = cat.desc; }
-      if (type === 'video') { list = list.filter(function (p) { return p.type === 'video' || p.video; }); title = 'Watch'; desc = 'Videos, episodes and clips from CityVision TV.'; }
+      if (type === 'video') { list = list.filter(function (p) { return p.type === 'video' || p.video; }).concat(ytLong()).sort(byDate); extraShorts = ytShorts(); title = 'Watch'; desc = 'Videos, episodes and clips from CityVision TV.'; }
       if (q) { list = search(q, list); title = 'Search'; desc = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for “' + q + '”'; }
       document.title = title + ' | CityVision TV';
       head.innerHTML = '<div class="wrap"><span class="eyebrow">' + (q ? 'Search' : cat ? 'Section' : 'CityVision TV') + '</span><h1>' + esc(title) + '</h1><p>' + esc(desc) + '</p>' +
@@ -251,13 +347,14 @@
     }
     $('#moreBtn').addEventListener('click', function () { shown += 12; draw(); });
     draw();
+    if (extraShorts.length) { var sh = document.createElement('section'); sh.className = 'shorts-sec'; sh.innerHTML = shortsRail(extraShorts); $('#list').parentNode.insertBefore(sh, $('#list').parentNode.firstChild.nextSibling); }
   };
 
   R.updates = function () {
     var host = $('#timeline'), since = seenAt();
-    if (!ALL.length) { host.innerHTML = '<div class="empty"><h3>No updates yet</h3><p>Check back soon.</p></div>'; return; }
+    if (!FEED.length) { host.innerHTML = '<div class="empty"><h3>No updates yet</h3><p>Check back soon.</p></div>'; return; }
     var day = '', h = '';
-    ALL.slice(0, 60).forEach(function (p) {
+    FEED.slice(0, 60).forEach(function (p) {
       var d = CV.fmtDate(p.date);
       if (d !== day) { day = d; h += '<div class="tl-day">' + d + '</div>'; }
       var isNew = new Date(p.date).getTime() > since;
@@ -269,7 +366,7 @@
 
   R.shows = function () {
     $('#showsGrid').innerHTML = CFG.shows.map(function (s) {
-      var n = ALL.filter(function (p) { return p.show === s.id; }).length;
+      var n = ALL.concat(YT).filter(function (p) { return p.show === s.id; }).length;
       return '<a class="show-big" href="' + BASE + 'section.html?show=' + s.id + '" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="sc-art">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div>' +
         '<div class="sb-b"><span class="eyebrow">' + esc(s.format) + (n ? ' &middot; ' + n + ' post' + (n === 1 ? '' : 's') : '') + '</span><h3>' + esc(s.name) + '</h3><p>' + esc(s.desc) + '</p></div></a>';
     }).join('');

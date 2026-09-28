@@ -1,0 +1,45 @@
+name: Refresh YouTube videos
+
+on:
+  schedule:
+    - cron: '17 * * * *'   # every hour
+  workflow_dispatch:        # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: youtube-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch latest videos
+        run: node .github/scripts/update-youtube.js
+      - name: Save changes
+        id: save
+        run: |
+          if git diff --quiet -- youtube.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "CityVision TV bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add youtube.json
+          git commit -m "Refresh YouTube videos"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Rebuild the website
+        if: steps.save.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" || true

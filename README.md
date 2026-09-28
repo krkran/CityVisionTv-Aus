@@ -24,9 +24,13 @@ Tips:
 - Photos are resized automatically, so upload them straight from your phone or camera.
 - Your work is backed up in the browser as you type, so a closed tab won't lose it.
 
+## YouTube videos
+
+The homepage Watch section, the Shorts row, show pages and the sidebar player all come from your YouTube channel automatically. A GitHub Action (`.github/workflows/youtube.yml`) checks the channel every hour and updates `youtube.json`, so new uploads appear on the site on their own. Videos are matched to shows by their title (for example, anything with "Hamro Story" in the title appears on the Hamro Story page). You can run it straight away from the repo's **Actions** tab → Refresh YouTube videos → Run workflow.
+
 ## Changing shows, sections or social links
 
-Edit `assets/config.js`. Show logos live in `assets/logos/`.
+Edit `assets/config.js`. Show logos live in `assets/logos/`. Each show's `yt` list sets which words in a YouTube title link a video to that show.
 
 ## How it works
 

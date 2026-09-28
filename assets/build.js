@@ -96,6 +96,7 @@
     return o;
   }
   function postUrl(p, base) {
+    if (p.href) return p.href;
     return p.static ? url(base, 'stories/' + p.id + '.html') : url(base, 'article.html?id=' + encodeURIComponent(p.id));
   }
   function thumb(p) {
@@ -105,11 +106,14 @@
   }
   function kicker(p) {
     var s = showById(p.show); if (s) return s.name;
+    if (p.source === 'youtube') return p.short ? 'Shorts' : 'Watch';
     var c = catById(p.category); return c ? c.name : 'News';
   }
   function kickerColor(p) { var s = showById(p.show); return s ? s.color : ''; }
   function kickerHref(p, base) {
-    return p.show ? url(base, 'section.html?show=' + p.show) : url(base, 'section.html?c=' + (p.category || 'news'));
+    if (p.show) return url(base, 'section.html?show=' + p.show);
+    if (p.source === 'youtube') return url(base, 'section.html?type=video');
+    return url(base, 'section.html?c=' + (p.category || 'news'));
   }
 
   /* ---------- icons ---------- */
@@ -226,7 +230,9 @@
   function media(p, base, cls, eager) {
     var src = thumb(p), s = showById(p.show), play = p.type === 'video' ? '<span class="play">' + I.play + '</span>' : '';
     var badge = p.type === 'video' ? '' : '';
-    if (src) return '<div class="media ' + (cls || '') + '"><img src="' + esc(url(base, src)) + '" alt="' + esc(p.imageAlt || '') + '"' + (eager ? '' : ' loading="lazy"') + ' decoding="async">' + play + badge + '</div>';
+    var hi = /i\.ytimg\.com\/vi\/[^/]+\/hqdefault\.jpg$/.test(src) && !p.short;
+    if (hi) src = src.replace('hqdefault', 'maxresdefault');
+    if (src) return '<div class="media ' + (p.short ? 'media--short ' : '') + (cls || '') + '"><img src="' + esc(url(base, src)) + '" alt="' + esc(p.imageAlt || '') + '"' + (eager ? '' : ' loading="lazy"') + ' decoding="async"' + (hi ? ' onload="if(this.naturalWidth<200){this.onload=null;this.src=this.src.replace(\'maxresdefault\',\'hqdefault\')}" onerror="this.onerror=null;this.src=this.src.replace(\'maxresdefault\',\'hqdefault\')"' : '') + '>' + play + badge + '</div>';
     if (s) return '<div class="media media--tile ' + (cls || '') + '" style="--tile:' + s.tile + ';--c:' + s.color + '">' + (s.logo ? '<img class="tile-logo" src="' + url(base, s.logo) + '" alt="" loading="lazy">' : '<b class="tile-word">' + esc(s.name) + '</b>') + play + '</div>';
     return '<div class="media media--brand ' + (cls || '') + '"><img class="tile-mark" src="' + url(base, 'assets/brand/mark.png') + '" alt="" loading="lazy">' + play + '</div>';
   }
@@ -263,15 +269,35 @@
       return videoEmbed(u.replace(/&amp;/g, '&'));
     });
   }
-  function shareBar(p, abs) {
-    var u = encodeURIComponent(abs), t = encodeURIComponent(p.title);
-    return '<div class="share" data-share-url="' + esc(abs) + '" data-share-title="' + esc(p.title) + '">' +
-      '<span class="share-l">Share</span>' +
-      '<a class="sh sh-fb" href="https://www.facebook.com/sharer/sharer.php?u=' + u + '" target="_blank" rel="noopener" aria-label="Share on Facebook">' + I.fb + '</a>' +
-      '<a class="sh sh-wa" href="https://wa.me/?text=' + t + '%20' + u + '" target="_blank" rel="noopener" aria-label="Share on WhatsApp">' + I.wa + '</a>' +
-      '<a class="sh sh-x" href="https://twitter.com/intent/tweet?text=' + t + '&url=' + u + '" target="_blank" rel="noopener" aria-label="Share on X">' + I.x + '</a>' +
-      '<button class="sh sh-copy" type="button" data-copy aria-label="Copy link">' + I.link + '</button>' +
-      '<button class="sh sh-native" type="button" data-native aria-label="Share">' + I.share + '</button></div>';
+  var SHARE_ICONS = {
+    ms: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 0C5.24 0 0 4.95 0 11.64c0 3.5 1.43 6.52 3.77 8.61.2.17.31.42.32.68l.06 2.13a.96.96 0 0 0 1.35.85l2.38-1.05a.96.96 0 0 1 .64-.05c1.09.3 2.26.46 3.48.46 6.76 0 12-4.95 12-11.64S18.76 0 12 0zm7.2 8.96-3.52 5.59a1.8 1.8 0 0 1-2.6.48l-2.8-2.1a.72.72 0 0 0-.87 0l-3.78 2.87c-.5.38-1.16-.22-.83-.76l3.52-5.59a1.8 1.8 0 0 1 2.6-.48l2.8 2.1c.26.2.61.2.87 0l3.78-2.87c.5-.38 1.16.22.83.76z"/></svg>',
+    tg: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.94 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm5.56 8.16-1.97 9.3c-.15.66-.54.82-1.09.51l-3-2.21-1.45 1.4c-.16.16-.3.3-.61.3l.21-3.05 5.56-5.02c.24-.21-.05-.33-.38-.12l-6.87 4.33-2.96-.93c-.64-.2-.66-.64.14-.95l11.57-4.46c.53-.2 1 .13.85.9z"/></svg>',
+    li: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>',
+    vb: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.4 0C9.47.03 5.33.35 3.02 2.47 1.3 4.18.7 6.7.63 9.83c-.06 3.12-.13 8.97 5.5 10.56v2.42s-.04.98.61 1.18c.8.25 1.26-.5 2.02-1.32l1.41-1.6c3.86.33 6.82-.42 7.16-.53.78-.25 5.18-.81 5.9-6.66.74-6.03-.36-9.83-2.34-11.55l-.01-.01C20.28 1.68 18.1.08 13.2.02c0 0-.36-.03-.95-.02h-.85zm.1 1.6h.75c4.13.05 6.09 1.3 6.55 1.72 1.51 1.3 2.3 4.4 1.72 9.02-.55 4.48-3.83 4.76-4.43 4.95-.26.08-2.63.67-5.62.48 0 0-2.23 2.69-2.92 3.39-.11.11-.24.15-.33.13-.12-.03-.16-.18-.15-.4l.02-3.67c-4.75-1.33-4.47-6.29-4.42-8.9.06-2.6.54-4.73 2-6.16 1.95-1.78 5.47-2.54 6.83-2.56zm.52 2.6a.33.33 0 0 0 0 .66c1.52.01 2.8.52 3.84 1.53 1.05 1.02 1.58 2.4 1.6 4.18a.33.33 0 1 0 .66 0c-.02-1.93-.61-3.49-1.8-4.65-1.18-1.15-2.66-1.72-4.3-1.73zm-3.62.75a1.2 1.2 0 0 0-.74.25c-.47.35-.93.74-1.1 1.31-.2.62.02 1.2.27 1.75a14.6 14.6 0 0 0 5.24 6.2c.73.47 1.54.9 2.4 1.07.73.14 1.36-.34 1.84-.86.23-.25.4-.58.33-.93-.06-.3-.32-.5-.55-.69-.37-.3-.77-.57-1.18-.82-.46-.28-1.03-.26-1.38.2l-.37.48c-.2.25-.56.23-.56.23-2.58-.66-3.27-3.27-3.27-3.27s-.03-.35.22-.55l.47-.38c.25-.2.4-.66.14-1.11-.2-.34-.73-1.22-1.02-1.55a.9.9 0 0 0-.74-.33zm3.95.94a.33.33 0 0 0-.03.66c.96.07 1.68.39 2.18.93.5.55.74 1.23.72 2.07a.33.33 0 1 0 .66.01c.02-.99-.28-1.84-.89-2.52-.62-.68-1.5-1.07-2.62-1.15h-.02zm.37 1.34a.33.33 0 0 0-.02.66c.43.02.72.14.9.33.18.18.28.47.3.9a.33.33 0 1 0 .66-.03c-.03-.52-.17-.95-.48-1.28-.3-.32-.75-.54-1.34-.58h-.02z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
+  };
+  function shareLinks(p, abs) {
+    var u = encodeURIComponent(abs), t = encodeURIComponent(p.title), both = encodeURIComponent(p.title + ' ' + abs);
+    return [
+      { k: 'fb', name: 'Facebook', href: 'https://www.facebook.com/sharer/sharer.php?u=' + u, icon: I.fb },
+      { k: 'wa', name: 'WhatsApp', href: 'https://wa.me/?text=' + both, icon: I.wa },
+      { k: 'ms', name: 'Messenger', href: 'fb-messenger://share/?link=' + u, icon: SHARE_ICONS.ms, mobile: true },
+      { k: 'vb', name: 'Viber', href: 'viber://forward?text=' + both, icon: SHARE_ICONS.vb, mobile: true },
+      { k: 'x', name: 'X', href: 'https://twitter.com/intent/tweet?text=' + t + '&url=' + u, icon: I.x },
+      { k: 'tg', name: 'Telegram', href: 'https://t.me/share/url?url=' + u + '&text=' + t, icon: SHARE_ICONS.tg },
+      { k: 'li', name: 'LinkedIn', href: 'https://www.linkedin.com/sharing/share-offsite/?url=' + u, icon: SHARE_ICONS.li },
+      { k: 'em', name: 'Email', href: 'mailto:?subject=' + t + '&body=' + encodeURIComponent(p.title + '\n\n' + abs), icon: SHARE_ICONS.mail, same: true }
+    ];
+  }
+  function shareBar(p, abs, big) {
+    var links = shareLinks(p, abs);
+    var a = links.map(function (l) {
+      return '<a class="sh sh-' + l.k + (l.mobile ? ' sh-m' : '') + '" href="' + esc(l.href) + '"' + (l.same || l.mobile ? '' : ' target="_blank" rel="noopener"') + ' aria-label="Share on ' + l.name + '" title="' + l.name + '">' + l.icon + (big ? '<span>' + l.name + '</span>' : '') + '</a>';
+    }).join('');
+    return '<div class="share' + (big ? ' share--big' : '') + '" data-share-url="' + esc(abs) + '" data-share-title="' + esc(p.title) + '">' +
+      (big ? '<h3 class="share-h">Share this story</h3>' : '<span class="share-l">Share</span>') + '<div class="share-row">' + a +
+      '<button class="sh sh-copy" type="button" data-copy aria-label="Copy link" title="Copy link">' + I.link + (big ? '<span>Copy link</span>' : '') + '</button>' +
+      '<button class="sh sh-native" type="button" data-native aria-label="More sharing options" title="More">' + I.share + (big ? '<span>More</span>' : '') + '</button></div></div>';
   }
   function storyInner(p, base, absUrl) {
     var s = showById(p.show);
@@ -292,7 +318,7 @@
       (p.type !== 'video' ? ' &middot; ' + mins + ' min read' : '') + '</span></div></div>' +
       shareBar(p, absUrl) + '</header>' + heroMedia +
       '<div class="story-body prose">' + renderBodyEmbeds(p.body || '') + ext + '</div>' +
-      tags + '<div class="story-foot">' + shareBar(p, absUrl) + '</div>' + showBox + '</article>';
+      tags + '<div class="story-foot">' + shareBar(p, absUrl, true) + '</div>' + showBox + '</article>';
   }
 
   /* Full static page for /stories/<id>.html — great for Facebook/WhatsApp previews and Google */

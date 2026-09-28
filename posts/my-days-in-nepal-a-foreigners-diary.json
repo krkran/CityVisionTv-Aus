@@ -1,0 +1,26 @@
+{
+ "image": "",
+ "imageAlt": "",
+ "imageCaption": "",
+ "video": "",
+ "link": "",
+ "tags": [
+  "My Days in Nepal",
+  "Documentary"
+ ],
+ "featured": false,
+ "breaking": false,
+ "status": "published",
+ "id": "my-days-in-nepal-a-foreigners-diary",
+ "type": "article",
+ "category": "culture",
+ "show": "my-days-in-nepal",
+ "author": "CityVision TV",
+ "date": "2026-09-23T23:00:00.000Z",
+ "title": "My Days in Nepal: a foreigner’s diary",
+ "summary": "A documentary series that sees Nepal through fresh eyes: its places, people, food and traditions.",
+ "body": "<p>My Days in Nepal follows a visitor experiencing Nepal for the first time, capturing the landscapes, cities, food and everyday moments that make the country unique.</p><p>For those of us far from home, it is a reminder of what we love about Nepal. For friends who have never been, it is an invitation.</p><p>Catch the series on our <a href=\"https://youtube.com/@CityVision_TV\">YouTube channel</a>.</p>",
+ "readMins": 1,
+ "static": true,
+ "json": true
+}

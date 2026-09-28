@@ -1,0 +1,26 @@
+{
+ "image": "",
+ "imageAlt": "",
+ "imageCaption": "",
+ "video": "",
+ "link": "",
+ "tags": [
+  "Diaspora Talk",
+  "Talk show"
+ ],
+ "featured": false,
+ "breaking": false,
+ "status": "published",
+ "id": "diaspora-talk-with-dr-bharat-raj-poudel",
+ "type": "article",
+ "category": "diaspora",
+ "show": "diaspora-talk",
+ "author": "CityVision TV",
+ "date": "2026-09-25T01:00:00.000Z",
+ "title": "Diaspora Talk with Dr. Bharat Raj Poudel",
+ "summary": "Our talk show exploring the issues that shape life for Nepali people living abroad.",
+ "body": "<p>Diaspora Talk, hosted by Dr. Bharat Raj Poudel, brings together voices from across the community to discuss the questions that matter to Nepali people living abroad.</p><p>Watch episodes on our <a href=\"https://youtube.com/@CityVision_TV\">YouTube channel</a> and follow this page for new releases.</p><p>Have a topic you would like the show to cover? <a href=\"/contact.html?topic=general\">Let us know</a>.</p>",
+ "readMins": 1,
+ "static": true,
+ "json": true
+}
