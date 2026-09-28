@@ -16,7 +16,7 @@
  "date": "2026-09-27T18:00:00.000Z",
  "title": "Holding a community event? Send it to us to be listed",
  "summary": "Share your event with the community. Send us the name, date, time, location and a short description.",
- "body": "<p>Festivals, fundraisers, sports days, cultural nights: we would love to help spread the word. <a href=\"/contact.html?topic=event\">Send us your event</a> with the name, date, time, location and a short description, and we will add it to our Events section.</p>",
+ "body": "<p>Festivals, fundraisers, sports days, cultural nights: we would love to help spread the word. <a href=\"/contact?topic=event\">Send us your event</a> with the name, date, time, location and a short description, and we will add it to our Events section.</p>",
  "readMins": 1,
  "static": true,
  "json": true

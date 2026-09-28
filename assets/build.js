@@ -10,7 +10,48 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  /* Romanise Nepali (Devanagari) so story links read like /stories/nepalma-badhipahiroko-kahar */
+  var DV_C = { 'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng', 'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny', 'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n', 'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n', 'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm', 'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'w', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h', 'क्ष': 'ksh', 'त्र': 'tr', 'ज्ञ': 'gy', 'ड़': 'r', 'ढ़': 'rh', 'फ़': 'f', 'ज़': 'z' };
+  var DV_V = { 'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'i', 'उ': 'u', 'ऊ': 'u', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'ऑ': 'o' };
+  var DV_M = { 'ा': 'a', 'ि': 'i', 'ी': 'i', 'ु': 'u', 'ू': 'u', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ॉ': 'o' };
+  var DV_D = '०१२३४५६७८९';
+  function romanize(str) {
+    str = String(str || '').normalize('NFC');
+    var out = '', i = 0, ch, next;
+    var inh = false, cluster = false, afterHalant = false, units = 0;
+    function endWord() {
+      // Nepali drops the final inherent "a" (नेपाल = nepal), but keeps it after a conjunct (सम्म = samma) or in one-letter words (र = ra)
+      if (inh && !cluster && units > 1) out = out.replace(/a$/, '');
+      inh = false; cluster = false; afterHalant = false; units = 0;
+    }
+    while (i < str.length) {
+      ch = str[i]; next = str[i + 1];
+      var three = ch + (next || '') + (str[i + 2] || '');
+      var cons = null, len = 1;
+      if (DV_C[three] && next === '्') { cons = DV_C[three]; len = 3; }
+      else if (next === '़' && DV_C[ch + '़']) { cons = DV_C[ch + '़']; len = 2; }
+      else if (DV_C[ch]) cons = DV_C[ch];
+      if (cons) {
+        cluster = afterHalant || len === 3; afterHalant = false;
+        out += cons; i += len; ch = str[i]; units++;
+        if (ch === '्') { i++; afterHalant = true; inh = false; continue; }
+        if (DV_M[ch]) { out += DV_M[ch]; i++; inh = false; }
+        else { out += 'a'; inh = true; }
+        continue;
+      }
+      if (DV_V[ch]) { out += DV_V[ch]; inh = false; units++; }
+      else if (ch === 'ं' || ch === 'ँ') { out += 'n'; inh = false; }
+      else if (ch === 'ः') { out += 'h'; inh = false; }
+      else if (DV_D.indexOf(ch) > -1) { endWord(); out += DV_D.indexOf(ch); }
+      else if (/[ऀ-ॿ]/.test(ch)) { /* skip other marks */ }
+      else { endWord(); out += ch; }
+      i++;
+    }
+    endWord();
+    return out;
+  }
   function slugify(s) {
+    s = romanize(s);
     var base = String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9ऀ-ॿ]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70).replace(/-+$/, '');
     // Devanagari-only titles make awkward URLs; fall back to a dated id
@@ -97,7 +138,7 @@
   }
   function postUrl(p, base) {
     if (p.href) return p.href;
-    return p.static ? url(base, 'stories/' + p.id + '.html') : url(base, 'article.html?id=' + encodeURIComponent(p.id));
+    return p.static ? url(base, 'stories/' + p.id) : url(base, 'article?id=' + encodeURIComponent(p.id));
   }
   function thumb(p) {
     if (p.image) return p.image;
@@ -111,9 +152,9 @@
   }
   function kickerColor(p) { var s = showById(p.show); return s ? s.color : ''; }
   function kickerHref(p, base) {
-    if (p.show) return url(base, 'section.html?show=' + p.show);
-    if (p.source === 'youtube') return url(base, 'section.html?type=video');
-    return url(base, 'section.html?c=' + (p.category || 'news'));
+    if (p.show) return url(base, 'shows/' + p.show);
+    if (p.source === 'youtube') return url(base, 'watch');
+    return url(base, '' + (p.category || 'news'));
   }
 
   /* ---------- icons ---------- */
@@ -140,7 +181,7 @@
 
   /* ---------- brand ---------- */
   function brand(base, cls) {
-    return '<a class="brand ' + (cls || '') + '" href="' + url(base, 'index.html') + '" aria-label="CityVision TV home">' +
+    return '<a class="brand ' + (cls || '') + '" href="' + (base || './') + '" aria-label="CityVision TV home">' +
       '<img class="brand-mark" src="' + url(base, 'assets/brand/mark.png') + '" alt="" width="84" height="44">' +
       '<span class="brand-word"><span class="bw-city">CITY</span><span class="bw-vision">VISION</span></span>' +
       '<span class="brand-tv">TV</span></a>';
@@ -150,17 +191,17 @@
   function header(base, active) {
     var S = CFG.social;
     var cats = CFG.categories.filter(function (c) { return ['news', 'community', 'culture', 'diaspora'].indexOf(c.id) > -1; });
-    var nav = '<a class="nl' + (active === 'home' ? ' on' : '') + '" href="' + url(base, 'index.html') + '">Home</a>';
-    cats.forEach(function (c) { nav += '<a class="nl' + (active === c.id ? ' on' : '') + '" href="' + url(base, 'section.html?c=' + c.id) + '">' + c.name + '</a>'; });
-    nav += '<a class="nl' + (active === 'videos' ? ' on' : '') + '" href="' + url(base, 'section.html?type=video') + '">Watch</a>';
+    var nav = '<a class="nl' + (active === 'home' ? ' on' : '') + '" href="' + (base || './') + '">Home</a>';
+    cats.forEach(function (c) { nav += '<a class="nl' + (active === c.id ? ' on' : '') + '" href="' + url(base, '' + c.id) + '">' + c.name + '</a>'; });
+    nav += '<a class="nl' + (active === 'videos' ? ' on' : '') + '" href="' + url(base, 'watch') + '">Watch</a>';
     nav += '<div class="nl-drop"><button class="nl' + (active === 'shows' ? ' on' : '') + '" aria-expanded="false" data-drop>Shows ' + I.chev + '</button><div class="mega"><div class="mega-in">' +
       CFG.shows.map(function (s) {
-        return '<a class="mega-item" href="' + url(base, 'section.html?show=' + s.id) + '"><span class="mega-logo" style="background:' + s.tile + '">' +
+        return '<a class="mega-item" href="' + url(base, 'shows/' + s.id) + '"><span class="mega-logo" style="background:' + s.tile + '">' +
           (s.logo ? '<img src="' + url(base, s.logo) + '" alt="" loading="lazy">' : '<b style="color:' + s.color + '">' + esc(s.name) + '</b>') +
           '</span><span><strong>' + esc(s.name) + '</strong><small>' + esc(s.format) + '</small></span></a>';
-      }).join('') + '<a class="mega-all" href="' + url(base, 'shows.html') + '">All shows ' + I.arrow + '</a></div></div></div>';
-    nav += '<a class="nl' + (active === 'updates' ? ' on' : '') + '" href="' + url(base, 'updates.html') + '">Updates</a>';
-    nav += '<a class="nl' + (active === 'events' ? ' on' : '') + '" href="' + url(base, 'section.html?c=events') + '">Events</a>';
+      }).join('') + '<a class="mega-all" href="' + url(base, 'shows/') + '">All shows ' + I.arrow + '</a></div></div></div>';
+    nav += '<a class="nl' + (active === 'updates' ? ' on' : '') + '" href="' + url(base, 'updates') + '">Updates</a>';
+    nav += '<a class="nl' + (active === 'events' ? ' on' : '') + '" href="' + url(base, 'events') + '">Events</a>';
 
     var date = new Date().toLocaleDateString('en-AU', { timeZone: tz(), weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     return '' +
@@ -187,17 +228,17 @@
       // drawer
       '<div class="drawer" id="drawer" aria-hidden="true"><div class="drawer-panel"><div class="drawer-top">' + brand(base, 'brand--sm') +
       '<button class="icon-btn" aria-label="Close menu" data-close>' + I.close + '</button></div>' +
-      '<form class="drawer-search" action="' + url(base, 'section.html') + '"><input name="q" type="search" placeholder="Search CityVision TV" aria-label="Search"><button aria-label="Search">' + I.search + '</button></form>' +
-      '<div class="drawer-links">' + nav.replace(/<div class="nl-drop">[\s\S]*?<\/div><\/div><\/div>/, '<a class="nl" href="' + url(base, 'shows.html') + '">Shows</a>') +
-      '<a class="nl" href="' + url(base, 'about.html') + '">About us</a><a class="nl" href="' + url(base, 'contact.html') + '">Contact</a></div>' +
-      '<div class="drawer-shows">' + CFG.shows.map(function (s) { return '<a href="' + url(base, 'section.html?show=' + s.id) + '" style="--c:' + s.color + '">' + esc(s.name) + '</a>'; }).join('') + '</div>' +
+      '<form class="drawer-search" action="' + url(base, 'search') + '"><input name="q" type="search" placeholder="Search CityVision TV" aria-label="Search"><button aria-label="Search">' + I.search + '</button></form>' +
+      '<div class="drawer-links">' + nav.replace(/<div class="nl-drop">[\s\S]*?<\/div><\/div><\/div>/, '<a class="nl" href="' + url(base, 'shows/') + '">Shows</a>') +
+      '<a class="nl" href="' + url(base, 'about') + '">About us</a><a class="nl" href="' + url(base, 'contact') + '">Contact</a></div>' +
+      '<div class="drawer-shows">' + CFG.shows.map(function (s) { return '<a href="' + url(base, 'shows/' + s.id) + '" style="--c:' + s.color + '">' + esc(s.name) + '</a>'; }).join('') + '</div>' +
       '</div></div>' +
       // search overlay
-      '<div class="search-ov" id="searchOv" aria-hidden="true"><div class="wrap"><form class="search-form" action="' + url(base, 'section.html') + '">' + I.search +
+      '<div class="search-ov" id="searchOv" aria-hidden="true"><div class="wrap"><form class="search-form" action="' + url(base, 'search') + '">' + I.search +
       '<input name="q" type="search" placeholder="Search stories, shows, people…" aria-label="Search" autocomplete="off"><button type="button" class="icon-btn" data-close aria-label="Close search">' + I.close + '</button></form>' +
       '<div class="search-live" id="searchLive"></div></div></div>' +
       // updates panel
-      '<div class="bellpanel" id="bellPanel" aria-hidden="true"><div class="bp-head"><strong>What’s new</strong><a href="' + url(base, 'updates.html') + '">See all updates</a></div><div class="bp-list" id="bpList"></div></div>';
+      '<div class="bellpanel" id="bellPanel" aria-hidden="true"><div class="bp-head"><strong>What’s new</strong><a href="' + url(base, 'updates') + '">See all updates</a></div><div class="bp-list" id="bpList"></div></div>';
   }
 
   function footer(base) {
@@ -214,15 +255,15 @@
       '<footer class="foot"><div class="wrap">' +
       '<div class="foot-top"><div class="foot-brand"><span class="foot-badge"><img src="' + url(base, 'assets/brand/logo.png') + '" alt="CityVision TV" width="120" height="112" loading="lazy"></span>' +
       '<p>' + esc(CFG.tagline) + '</p><p class="foot-loc">' + esc(CFG.location) + '</p></div>' +
-      '<div class="foot-col"><h4>Sections</h4>' + CFG.categories.map(function (c) { return '<a href="' + url(base, 'section.html?c=' + c.id) + '">' + c.name + '</a>'; }).join('') + '<a href="' + url(base, 'section.html?type=video') + '">Watch</a></div>' +
-      '<div class="foot-col"><h4>Shows</h4>' + CFG.shows.map(function (s) { return '<a href="' + url(base, 'section.html?show=' + s.id) + '">' + esc(s.name) + '</a>'; }).join('') + '</div>' +
-      '<div class="foot-col"><h4>CityVision</h4><a href="' + url(base, 'about.html') + '">About us</a><a href="' + url(base, 'contact.html') + '">Contact</a>' +
-      '<a href="' + url(base, 'contact.html?topic=story') + '">Submit a story</a><a href="' + url(base, 'contact.html?topic=advertising') + '">Advertise with us</a>' +
-      '<a href="' + url(base, 'contact.html?topic=event') + '">List an event</a><a href="' + url(base, 'updates.html') + '">Latest updates</a><a href="' + url(base, 'feed.xml') + '">RSS feed</a></div>' +
+      '<div class="foot-col"><h4>Sections</h4>' + CFG.categories.map(function (c) { return '<a href="' + url(base, '' + c.id) + '">' + c.name + '</a>'; }).join('') + '<a href="' + url(base, 'watch') + '">Watch</a></div>' +
+      '<div class="foot-col"><h4>Shows</h4>' + CFG.shows.map(function (s) { return '<a href="' + url(base, 'shows/' + s.id) + '">' + esc(s.name) + '</a>'; }).join('') + '</div>' +
+      '<div class="foot-col"><h4>CityVision</h4><a href="' + url(base, 'about') + '">About us</a><a href="' + url(base, 'contact') + '">Contact</a>' +
+      '<a href="' + url(base, 'contact?topic=story') + '">Submit a story</a><a href="' + url(base, 'contact?topic=advertising') + '">Advertise with us</a>' +
+      '<a href="' + url(base, 'contact?topic=event') + '">List an event</a><a href="' + url(base, 'updates') + '">Latest updates</a><a href="' + url(base, 'feed.xml') + '">RSS feed</a></div>' +
       '<div class="foot-col"><h4>Follow</h4><a href="' + S.youtube + '" target="_blank" rel="noopener">YouTube</a><a href="' + S.facebook + '" target="_blank" rel="noopener">Facebook</a>' +
       '<a href="' + S.instagram + '" target="_blank" rel="noopener">Instagram</a><a href="' + S.tiktok + '" target="_blank" rel="noopener">TikTok</a><a href="' + S.spotify + '" target="_blank" rel="noopener">Spotify</a>' +
       '<a href="mailto:' + CFG.email + '">Email us</a></div></div>' +
-      '<div class="foot-bottom"><span>&copy; ' + y + ' CityVision TV Australia</span><span lang="ne">नेपाली मिडिया अष्ट्रेलिया</span><a href="' + url(base, 'admin.html') + '" class="foot-admin">Newsroom</a></div>' +
+      '<div class="foot-bottom"><span>&copy; ' + y + ' CityVision TV Australia</span><span lang="ne">नेपाली मिडिया अष्ट्रेलिया</span><a href="' + url(base, 'admin') + '" class="foot-admin">Newsroom</a></div>' +
       '</div></footer>';
   }
 
@@ -277,27 +318,19 @@
     mail: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>'
   };
   function shareLinks(p, abs) {
-    var u = encodeURIComponent(abs), t = encodeURIComponent(p.title), both = encodeURIComponent(p.title + ' ' + abs);
+    var u = encodeURIComponent(abs), t = encodeURIComponent(p.title);
     return [
       { k: 'fb', name: 'Facebook', href: 'https://www.facebook.com/sharer/sharer.php?u=' + u, icon: I.fb },
-      { k: 'wa', name: 'WhatsApp', href: 'https://wa.me/?text=' + both, icon: I.wa },
-      { k: 'ms', name: 'Messenger', href: 'fb-messenger://share/?link=' + u, icon: SHARE_ICONS.ms, mobile: true },
-      { k: 'vb', name: 'Viber', href: 'viber://forward?text=' + both, icon: SHARE_ICONS.vb, mobile: true },
+      { k: 'wa', name: 'WhatsApp', href: 'https://api.whatsapp.com/send?text=' + encodeURIComponent(p.title + ' ' + abs), icon: I.wa },
       { k: 'x', name: 'X', href: 'https://twitter.com/intent/tweet?text=' + t + '&url=' + u, icon: I.x },
-      { k: 'tg', name: 'Telegram', href: 'https://t.me/share/url?url=' + u + '&text=' + t, icon: SHARE_ICONS.tg },
-      { k: 'li', name: 'LinkedIn', href: 'https://www.linkedin.com/sharing/share-offsite/?url=' + u, icon: SHARE_ICONS.li },
-      { k: 'em', name: 'Email', href: 'mailto:?subject=' + t + '&body=' + encodeURIComponent(p.title + '\n\n' + abs), icon: SHARE_ICONS.mail, same: true }
+      { k: 'li', name: 'LinkedIn', href: 'https://www.linkedin.com/sharing/share-offsite/?url=' + u, icon: SHARE_ICONS.li }
     ];
   }
   function shareBar(p, abs, big) {
-    var links = shareLinks(p, abs);
-    var a = links.map(function (l) {
-      return '<a class="sh sh-' + l.k + (l.mobile ? ' sh-m' : '') + '" href="' + esc(l.href) + '"' + (l.same || l.mobile ? '' : ' target="_blank" rel="noopener"') + ' aria-label="Share on ' + l.name + '" title="' + l.name + '">' + l.icon + (big ? '<span>' + l.name + '</span>' : '') + '</a>';
-    }).join('');
-    return '<div class="share' + (big ? ' share--big' : '') + '" data-share-url="' + esc(abs) + '" data-share-title="' + esc(p.title) + '">' +
-      (big ? '<h3 class="share-h">Share this story</h3>' : '<span class="share-l">Share</span>') + '<div class="share-row">' + a +
-      '<button class="sh sh-copy" type="button" data-copy aria-label="Copy link" title="Copy link">' + I.link + (big ? '<span>Copy link</span>' : '') + '</button>' +
-      '<button class="sh sh-native" type="button" data-native aria-label="More sharing options" title="More">' + I.share + (big ? '<span>More</span>' : '') + '</button></div></div>';
+    return '<div class="share' + (big ? ' share--foot' : '') + '"><span class="share-l">' + (big ? 'Share this story' : 'Share') + '</span><div class="share-row">' +
+      shareLinks(p, abs).map(function (l) {
+        return '<a class="sh sh-' + l.k + '" href="' + esc(l.href) + '" target="_blank" rel="noopener" data-share aria-label="Share on ' + l.name + '" title="Share on ' + l.name + '">' + l.icon + '</a>';
+      }).join('') + '</div></div>';
   }
   function storyInner(p, base, absUrl) {
     var s = showById(p.show);
@@ -305,8 +338,8 @@
     var heroMedia = '';
     if (p.video) heroMedia = '<figure class="story-hero">' + videoEmbed(p.video) + (p.imageCaption ? '<figcaption>' + esc(p.imageCaption) + '</figcaption>' : '') + '</figure>';
     else if (p.image) heroMedia = '<figure class="story-hero"><img src="' + esc(url(base, p.image)) + '" alt="' + esc(p.imageAlt || '') + '" decoding="async">' + (p.imageCaption ? '<figcaption>' + esc(p.imageCaption) + '</figcaption>' : '') + '</figure>';
-    var tags = (p.tags || []).length ? '<div class="tags">' + p.tags.map(function (t) { return '<a href="' + url(base, 'section.html?q=' + encodeURIComponent(t)) + '">' + esc(t) + '</a>'; }).join('') + '</div>' : '';
-    var showBox = s ? '<aside class="showbox" style="--c:' + s.color + ';--tile:' + s.tile + '"><div class="showbox-logo">' + (s.logo ? '<img src="' + url(base, s.logo) + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div><div><span class="eyebrow">' + esc(s.format) + '</span><h3>' + esc(s.name) + '</h3><p>' + esc(s.desc) + '</p><a class="lnk" href="' + url(base, 'section.html?show=' + s.id) + '">More from ' + esc(s.name) + ' ' + I.arrow + '</a></div></aside>' : '';
+    var tags = (p.tags || []).length ? '<div class="tags">' + p.tags.map(function (t) { return '<a href="' + url(base, 'search?q=' + encodeURIComponent(t)) + '">' + esc(t) + '</a>'; }).join('') + '</div>' : '';
+    var showBox = s ? '<aside class="showbox" style="--c:' + s.color + ';--tile:' + s.tile + '"><div class="showbox-logo">' + (s.logo ? '<img src="' + url(base, s.logo) + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div><div><span class="eyebrow">' + esc(s.format) + '</span><h3>' + esc(s.name) + '</h3><p>' + esc(s.desc) + '</p><a class="lnk" href="' + url(base, 'shows/' + s.id) + '">More from ' + esc(s.name) + ' ' + I.arrow + '</a></div></aside>' : '';
     var ext = p.link ? '<p><a class="btn btn--ink" href="' + esc(p.link) + '" target="_blank" rel="noopener">Read more at the source &rarr;</a></p>' : '';
     var updated = p.updated && p.updated !== p.date ? ' <span class="upd">Updated ' + fmtDate(p.updated, true) + '</span>' : '';
     return '<article class="story' + (p.type === 'update' ? ' story--update' : '') + '">' +
@@ -321,10 +354,10 @@
       tags + '<div class="story-foot">' + shareBar(p, absUrl, true) + '</div>' + showBox + '</article>';
   }
 
-  /* Full static page for /stories/<id>.html — great for Facebook/WhatsApp previews and Google */
+  /* Full static page (file stories/<id>.html, served at /stories/<id>) — great for Facebook/WhatsApp previews and Google */
   function storyPage(p) {
     var base = '../';
-    var abs = CFG.siteUrl + '/stories/' + p.id + '.html';
+    var abs = CFG.siteUrl + '/stories/' + p.id;
     var img = thumb(p); img = img ? (isAbs(img) ? img : CFG.siteUrl + '/' + img.replace(/^\//, '')) : CFG.siteUrl + '/assets/brand/og-default.jpg';
     var desc = p.summary || stripTags(p.body).slice(0, 200);
     var ld = { '@context': 'https://schema.org', '@type': p.type === 'video' ? 'VideoObject' : 'NewsArticle', headline: p.title, description: desc, image: [img], datePublished: p.date, dateModified: p.updated || p.date, author: p.author ? [{ '@type': 'Person', name: p.author }] : [{ '@type': 'Organization', name: 'CityVision TV' }], publisher: { '@type': 'Organization', name: 'CityVision TV', logo: { '@type': 'ImageObject', url: CFG.siteUrl + '/assets/brand/icon-512.png' } }, mainEntityOfPage: abs };
@@ -366,7 +399,7 @@
       '<title>CityVision TV</title>\n<link>' + CFG.siteUrl + '/</link>\n<description>' + xmlEsc(CFG.tagline) + '</description>\n<language>en-au</language>\n' +
       '<atom:link href="' + CFG.siteUrl + '/feed.xml" rel="self" type="application/rss+xml"/>\n<lastBuildDate>' + new Date().toUTCString() + '</lastBuildDate>\n' +
       items.map(function (p) {
-        var link = p.static ? CFG.siteUrl + '/stories/' + p.id + '.html' : CFG.siteUrl + '/article.html?id=' + encodeURIComponent(p.id);
+        var link = p.static ? CFG.siteUrl + '/stories/' + p.id : CFG.siteUrl + '/article?id=' + encodeURIComponent(p.id);
         var img = thumb(p); if (img && !isAbs(img)) img = CFG.siteUrl + '/' + img;
         return '<item>\n<title>' + xmlEsc(p.title) + '</title>\n<link>' + link + '</link>\n<guid isPermaLink="true">' + link + '</guid>\n' +
           '<pubDate>' + new Date(p.date).toUTCString() + '</pubDate>\n<category>' + xmlEsc(kicker(p)) + '</category>\n' +
@@ -374,20 +407,20 @@
       }).join('') + '</channel>\n</rss>\n';
   }
   function sitemapXML(index) {
-    var pages = ['', 'shows.html', 'updates.html', 'about.html', 'contact.html'].map(function (p) { return CFG.siteUrl + '/' + p; });
-    CFG.categories.forEach(function (c) { pages.push(CFG.siteUrl + '/section.html?c=' + c.id); });
-    CFG.shows.forEach(function (s) { pages.push(CFG.siteUrl + '/section.html?show=' + s.id); });
+    var pages = ['', 'watch', 'shows/', 'updates', 'about', 'contact'].map(function (p) { return CFG.siteUrl + '/' + p; });
+    CFG.categories.forEach(function (c) { pages.push(CFG.siteUrl + '/' + c.id); });
+    CFG.shows.forEach(function (s) { pages.push(CFG.siteUrl + '/shows/' + s.id); });
     var out = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     pages.forEach(function (u) { out += '<url><loc>' + xmlEsc(u) + '</loc></url>\n'; });
     index.forEach(function (p) {
       if (p.status === 'draft' || !p.static) return;
-      out += '<url><loc>' + CFG.siteUrl + '/stories/' + p.id + '.html</loc><lastmod>' + String(p.updated || p.date).slice(0, 10) + '</lastmod></url>\n';
+      out += '<url><loc>' + CFG.siteUrl + '/stories/' + p.id + '</loc><lastmod>' + String(p.updated || p.date).slice(0, 10) + '</lastmod></url>\n';
     });
     return out + '</urlset>\n';
   }
 
   var API = {
-    CFG: CFG, I: I, esc: esc, slugify: slugify, stripTags: stripTags, readMins: readMins, fmtDate: fmtDate, fmtShort: fmtShort, fmtTime: fmtTime, ago: ago,
+    CFG: CFG, I: I, esc: esc, slugify: slugify, romanize: romanize, stripTags: stripTags, readMins: readMins, fmtDate: fmtDate, fmtShort: fmtShort, fmtTime: fmtTime, ago: ago,
     ytId: ytId, videoEmbed: videoEmbed, showById: showById, catById: catById, url: url, isAbs: isAbs, normalize: normalize, postUrl: postUrl, thumb: thumb,
     kicker: kicker, brand: brand, header: header, footer: footer, media: media, metaLine: metaLine, card: card, storyInner: storyInner,
     storyPage: storyPage, headAssets: headAssets, tailAssets: tailAssets, feedXML: feedXML, sitemapXML: sitemapXML, renderBodyEmbeds: renderBodyEmbeds

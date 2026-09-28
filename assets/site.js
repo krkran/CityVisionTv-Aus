@@ -18,7 +18,8 @@
 
   /* ---------- shell ---------- */
   var active = body.getAttribute('data-active') || '';
-  if (PAGE === 'section') active = qs('c') || (qs('type') === 'video' ? 'videos' : qs('show') ? 'shows' : '');
+  var DS = body.dataset;
+  if (PAGE === 'section') active = qs('c') || DS.c || ((qs('type') || DS.type) === 'video' ? 'videos' : (qs('show') || DS.show) ? 'shows' : '');
   if (PAGE === 'home') active = 'home';
   $('#cv-header').outerHTML = CV.header(BASE, active);
   $('#cv-footer').outerHTML = CV.footer(BASE);
@@ -54,6 +55,14 @@
       var sh = t.closest('.share');
       if (navigator.share) navigator.share({ title: sh.getAttribute('data-share-title'), url: sh.getAttribute('data-share-url') }).catch(function () {});
     }
+  });
+  // share buttons open a small window on computers, the app on phones
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-share]');
+    if (!a || matchMedia('(hover: none)').matches) return;
+    var w = 620, h = 560, l = Math.max(0, (screen.width - w) / 2), t = Math.max(0, (screen.height - h) / 2);
+    var win = window.open(a.href, 'cvshare', 'width=' + w + ',height=' + h + ',left=' + l + ',top=' + t);
+    if (win) { try { win.opener = null; } catch (x) {} e.preventDefault(); }
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLayers(); });
 
@@ -200,7 +209,7 @@
   sInput.addEventListener('input', function () {
     var r = search(sInput.value).slice(0, 8), box = $('#searchLive');
     if (!sInput.value.trim()) { box.innerHTML = ''; return; }
-    box.innerHTML = r.length ? r.map(function (p) { return card(p, 'row'); }).join('') + '<p><a class="lnk" href="' + BASE + 'section.html?q=' + encodeURIComponent(sInput.value) + '">See all results ' + I.arrow + '</a></p>' : '<p class="search-hint">No stories match “' + esc(sInput.value) + '” yet.</p>';
+    box.innerHTML = r.length ? r.map(function (p) { return card(p, 'row'); }).join('') + '<p><a class="lnk" href="' + BASE + 'search?q=' + encodeURIComponent(sInput.value) + '">See all results ' + I.arrow + '</a></p>' : '<p class="search-hint">No stories match “' + esc(sInput.value) + '” yet.</p>';
   });
 
   /* video lightbox */
@@ -259,13 +268,13 @@
       '<div class="top-mid">' + mid.map(function (p) { return card(p, 'std'); }).join('') + '</div>' +
       '<aside class="live"><div class="live-h"><span class="pulse"></span>Latest updates</div><div class="live-list">' +
       live.map(function (p) { return '<a class="live-item" href="' + CV.postUrl(p, BASE) + '"><time datetime="' + esc(p.date) + '">' + CV.ago(p.date) + '</time><strong>' + esc(p.title) + '</strong></a>'; }).join('') +
-      '</div><a class="lnk live-more" href="' + BASE + 'updates.html">All updates ' + I.arrow + '</a></aside></div>' +
+      '</div><a class="lnk live-more" href="' + BASE + 'updates">All updates ' + I.arrow + '</a></aside></div>' +
       (row.length >= 2 ? '<div class="row4 row4--n' + row.length + '">' + row.map(function (p) { return card(p, 'std'); }).join('') + '</div>' : '') + '</section>';
 
     // Watch band: newest videos from our posts and the YouTube channel
     var vids = ALL.filter(function (p) { return p.type === 'video' || p.video; }).concat(ytLong()).sort(byDate);
     var shorts = ytShorts();
-    h += '<section class="watch" data-lightbox><div class="wrap"><div class="sec-h"><h2><span class="dot"></span>Watch</h2><div class="sec-h-r"><a class="btn btn--red btn--sm" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="lnk" href="' + BASE + 'section.html?type=video">All videos ' + I.arrow + '</a></div></div>';
+    h += '<section class="watch" data-lightbox><div class="wrap"><div class="sec-h"><h2><span class="dot"></span>Watch</h2><div class="sec-h-r"><a class="btn btn--red btn--sm" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="lnk" href="' + BASE + 'watch">All videos ' + I.arrow + '</a></div></div>';
     if (vids.length) {
       h += '<div class="watch-grid"><div>' + card(vids[0], 'lead') + '</div><div class="watch-side">' + vids.slice(1, 4).map(function (p) { return card(p, 'row'); }).join('') + '</div></div>';
     } else if (YT_UPLOADS) {
@@ -274,9 +283,9 @@
     h += shortsRail(shorts) + '</div></section>';
 
     // Shows rail
-    h += '<section class="wrap sec"><div class="sec-h"><h2><span class="dot" style="--k:var(--indigo)"></span>Our shows</h2><a class="lnk" href="' + BASE + 'shows.html">All shows ' + I.arrow + '</a></div><div class="shows-rail">' +
+    h += '<section class="wrap sec"><div class="sec-h"><h2><span class="dot" style="--k:var(--indigo)"></span>Our shows</h2><a class="lnk" href="' + BASE + 'shows/">All shows ' + I.arrow + '</a></div><div class="shows-rail">' +
       CFG.shows.map(function (s) {
-        return '<a class="show-card" href="' + BASE + 'section.html?show=' + s.id + '" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="sc-art">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div><div class="sc-b"><strong>' + esc(s.name) + '</strong><small>' + esc(s.format) + '</small></div></a>';
+        return '<a class="show-card" href="' + BASE + 'shows/' + s.id + '" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="sc-art">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div><div class="sc-b"><strong>' + esc(s.name) + '</strong><small>' + esc(s.format) + '</small></div></a>';
       }).join('') + '</div></section>';
 
     // Category blocks + sidebar
@@ -284,11 +293,11 @@
     CFG.categories.forEach(function (c) {
       var items = ALL.filter(function (p) { return p.category === c.id && p.type !== 'update'; });
       if (items.length < 2) return;
-      blocks += '<section class="blk"><div class="sec-h"><h2><span class="dot"></span>' + c.name + '</h2><a class="lnk" href="' + BASE + 'section.html?c=' + c.id + '">More ' + c.name.toLowerCase() + ' ' + I.arrow + '</a></div>' +
+      blocks += '<section class="blk"><div class="sec-h"><h2><span class="dot"></span>' + c.name + '</h2><a class="lnk" href="' + BASE + '' + c.id + '">More ' + c.name.toLowerCase() + ' ' + I.arrow + '</a></div>' +
         card(items[0], 'wide') + (items.length > 1 ? '<div class="blk-grid">' + items.slice(1, 4).map(function (p) { return card(p, 'std'); }).join('') + '</div>' : '') + '</section>';
     });
     if (!blocks) {
-      blocks = '<section class="blk"><div class="sec-h"><h2><span class="dot"></span>More stories</h2><a class="lnk" href="' + BASE + 'section.html">Everything ' + I.arrow + '</a></div><div class="blk-grid">' +
+      blocks = '<section class="blk"><div class="sec-h"><h2><span class="dot"></span>More stories</h2><a class="lnk" href="' + BASE + 'search">Everything ' + I.arrow + '</a></div><div class="blk-grid">' +
         ALL.filter(function (p) { return p.type !== 'update'; }).slice(0, 6).map(function (p) { return card(p, 'std'); }).join('') + '</div></section>';
     }
     h += '<div class="wrap split"><div>' + blocks + '</div><aside class="split-side"><div class="sticky">' + sidebar() + '</div></aside></div>';
@@ -302,16 +311,17 @@
     var ytSrc = latest ? 'https://www.youtube-nocookie.com/embed/' + latest.ytid + '?rel=0' : (YT_UPLOADS ? 'https://www.youtube-nocookie.com/embed/videoseries?list=' + YT_UPLOADS : '');
     var ytCard = ytSrc ? '<div class="ytc" style="margin-top:24px"><div class="ytc-top"><span class="ytc-ic">' + I.yt + '</span><div><span class="eyebrow">Latest on YouTube</span><h3>' + (latest ? esc(latest.title) : 'CityVision TV') + '</h3></div></div>' +
       '<div class="ytc-player"><iframe src="' + ytSrc + '" title="Latest CityVision TV video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>' +
-      '<div class="ytc-actions"><a class="ytc-sub" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="ytc-more" href="' + BASE + 'section.html?type=video">More videos</a></div></div>' : '';
+      '<div class="ytc-actions"><a class="ytc-sub" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="ytc-more" href="' + BASE + 'watch">More videos</a></div></div>' : '';
     return '<div class="panel"><div class="panel-h">Most recent</div><div class="num-list">' + recent.map(function (p) { return card(p, 'text'); }).join('') + '</div></div>' + ytCard +
       '<div class="pod" style="margin-top:24px"><div class="pod-top"><img src="' + BASE + kur.logo + '" alt=""><div><span class="eyebrow">Podcast</span><h3>Kurakani</h3></div></div>' +
       '<iframe title="Kurakani on Spotify" src="https://open.spotify.com/embed/show/5AyBIxWf3yroPNncxRpsVw?utm_source=generator&theme=0" height="152" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>' +
       '<a class="pod-btn" href="' + CFG.social.spotify + '" target="_blank" rel="noopener">' + I.sp + ' Listen on Spotify</a></div>' +
-      '<div class="cta-panel" style="margin-top:24px"><span class="eyebrow eyebrow--light">Your story</span><h3>Got a story the community should hear?</h3><p>Send us a news tip, an event, or someone we should feature.</p><a class="btn btn--light btn--sm" href="' + BASE + 'contact.html?topic=story">Submit a story ' + I.arrow + '</a></div>';
+      '<div class="cta-panel" style="margin-top:24px"><span class="eyebrow eyebrow--light">Your story</span><h3>Got a story the community should hear?</h3><p>Send us a news tip, an event, or someone we should feature.</p><a class="btn btn--light btn--sm" href="' + BASE + 'contact?topic=story">Submit a story ' + I.arrow + '</a></div>';
   }
 
   R.section = function () {
-    var c = qs('c'), show = qs('show'), type = qs('type'), q = qs('q');
+    var c = qs('c') || DS.c, show = qs('show') || DS.show, type = qs('type') || DS.type, q = qs('q');
+    if (q === null && DS.search) q = '';
     var extraShorts = [];
     var head = $('#phead'), list = ALL.slice(), title = 'All stories', desc = 'Everything from the CityVision TV newsroom.';
     var s = show && CV.showById(show), cat = c && CV.catById(c);
@@ -321,14 +331,14 @@
       document.title = s.name + ' | CityVision TV';
       head.outerHTML = '<header class="phead phead--show" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="wrap"><div class="ps-logo">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="' + esc(s.name) + '">' : '<b>' + esc(s.name) + '</b>') + '</div><div><span class="eyebrow">' + esc(s.format) + '</span><h1 style="margin:10px 0;font:800 clamp(32px,5vw,54px)/1.02 var(--f-ui);letter-spacing:-.03em">' + esc(s.name) + '</h1><p>' + esc(s.desc) + '</p><div class="ps-actions">' +
         (s.link ? '<a class="btn btn--ink" href="' + s.link + '" target="_blank" rel="noopener">' + I.sp + ' Listen on Spotify</a>' : '<a class="btn btn--red" href="' + CFG.social.youtube + '" target="_blank" rel="noopener">' + I.yt + ' Watch on YouTube</a>') +
-        '<a class="btn btn--ghost" href="' + BASE + 'contact.html?topic=feature">Be on the show</a></div></div></div></header>';
+        '<a class="btn btn--ghost" href="' + BASE + 'contact?topic=feature">Be on the show</a></div></div></div></header>';
     } else {
       if (cat) { list = list.filter(function (p) { return p.category === cat.id; }); title = cat.name; desc = cat.desc; }
       if (type === 'video') { list = list.filter(function (p) { return p.type === 'video' || p.video; }).concat(ytLong()).sort(byDate); extraShorts = ytShorts(); title = 'Watch'; desc = 'Videos, episodes and clips from CityVision TV.'; }
       if (q) { list = search(q, list); title = 'Search'; desc = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for “' + q + '”'; }
       document.title = title + ' | CityVision TV';
       head.innerHTML = '<div class="wrap"><span class="eyebrow">' + (q ? 'Search' : cat ? 'Section' : 'CityVision TV') + '</span><h1>' + esc(title) + '</h1><p>' + esc(desc) + '</p>' +
-        (q !== null ? '<form class="search-bar" action="section.html"><input name="q" type="search" value="' + esc(q || '') + '" placeholder="Search stories" aria-label="Search"><button>Search</button></form>' : '') + '</div>';
+        (q !== null ? '<form class="search-bar" action="' + BASE + 'search"><input name="q" type="search" value="' + esc(q || '') + '" placeholder="Search stories" aria-label="Search"><button>Search</button></form>' : '') + '</div>';
     }
     var filter = 'all', shown = 12, grid = $('#list');
     var types = {}; list.forEach(function (p) { types[p.type] = 1; });
@@ -367,7 +377,7 @@
   R.shows = function () {
     $('#showsGrid').innerHTML = CFG.shows.map(function (s) {
       var n = ALL.concat(YT).filter(function (p) { return p.show === s.id; }).length;
-      return '<a class="show-big" href="' + BASE + 'section.html?show=' + s.id + '" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="sc-art">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div>' +
+      return '<a class="show-big" href="' + BASE + 'shows/' + s.id + '" style="--tile:' + s.tile + ';--c:' + s.color + '"><div class="sc-art">' + (s.logo ? '<img src="' + BASE + s.logo + '" alt="" loading="lazy">' : '<b>' + esc(s.name) + '</b>') + '</div>' +
         '<div class="sb-b"><span class="eyebrow">' + esc(s.format) + (n ? ' &middot; ' + n + ' post' + (n === 1 ? '' : 's') : '') + '</span><h3>' + esc(s.name) + '</h3><p>' + esc(s.desc) + '</p></div></a>';
     }).join('');
   };
@@ -382,7 +392,7 @@
     var rel = ALL.filter(function (p) { return p.id !== id; });
     if (me) rel.sort(function (a, b) { return ((b.show && b.show === me.show) * 2 + (b.category === me.category)) - ((a.show && a.show === me.show) * 2 + (a.category === me.category)); });
     rel = rel.slice(0, 4);
-    if (rel.length) $('#more').innerHTML = '<div class="sec-h"><h2><span class="dot"></span>More from CityVision</h2><a class="lnk" href="' + BASE + 'updates.html">Latest ' + I.arrow + '</a></div><div class="row4" style="border:0;padding:0;margin:0">' + rel.map(function (p) { return card(p, 'std'); }).join('') + '</div>';
+    if (rel.length) $('#more').innerHTML = '<div class="sec-h"><h2><span class="dot"></span>More from CityVision</h2><a class="lnk" href="' + BASE + 'updates">Latest ' + I.arrow + '</a></div><div class="row4" style="border:0;padding:0;margin:0">' + rel.map(function (p) { return card(p, 'std'); }).join('') + '</div>';
   };
 
   // Dynamic article reader (article.html?id=…) — fallback when a static page does not exist
@@ -390,9 +400,9 @@
     var id = qs('id'), host = $('#articleHost');
     var idx = ALL.filter(function (p) { return p.id === id; })[0];
     function show(p) {
-      if (!p) { host.innerHTML = '<div class="empty" style="margin:40px 0"><h3>Story not found</h3><p>It may have been moved or removed. <a class="lnk" href="index.html">Back to home</a></p></div>'; return; }
+      if (!p) { host.innerHTML = '<div class="empty" style="margin:40px 0"><h3>Story not found</h3><p>It may have been moved or removed. <a class="lnk" href="./">Back to home</a></p></div>'; return; }
       document.title = p.title + ' | CityVision TV';
-      var abs = CFG.siteUrl + '/' + (p.static ? 'stories/' + p.id + '.html' : 'article.html?id=' + encodeURIComponent(p.id));
+      var abs = CFG.siteUrl + '/' + (p.static ? 'stories/' + p.id : 'article?id=' + encodeURIComponent(p.id));
       p.body = sanitize(p.body || (p.summary ? '<p>' + esc(p.summary) + '</p>' : ''));
       host.innerHTML = CV.storyInner(p, BASE, abs);
       body.setAttribute('data-id', p.id); R.story();
