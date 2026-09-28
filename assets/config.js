@@ -53,7 +53,7 @@
       { id: 'diaspora-talk', yt: ['Diaspora Talk'], name: 'Diaspora Talk', format: 'Talk show', logo: 'assets/logos/diasporatlak.webp',
         color: '#1f4e9a', tile: '#eaf1fb',
         desc: 'Diaspora Talk with Dr. Bharat Raj Poudel: conversations on the issues shaping the Nepali diaspora.' },
-      { id: '8-baje', yt: ['8 Baje', '8 बजे'], name: '8 Baje', format: 'Talk show', logo: '',
+      { id: '8-baje', yt: ['8 Baje', '8 बजे'], name: '8 Baje', format: 'Talk show', logo: 'assets/logos/8baje.png',
         color: '#2b0782', tile: '#efeaff',
         desc: 'Conversations that matter, at eight o’clock.' },
       { id: 'my-days-in-nepal', yt: ['My Days in Nepal'], name: 'My Days in Nepal', format: 'Documentary', logo: 'assets/logos/mydaysinnepal.webp',
