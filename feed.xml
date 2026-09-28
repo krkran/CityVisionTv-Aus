@@ -6,7 +6,7 @@
 <description>By Nepali, for Nepali. The digital home of the Nepali community in Australia.</description>
 <language>en-au</language>
 <atom:link href="https://cityvisiontv.com.au/feed.xml" rel="self" type="application/rss+xml"/>
-<lastBuildDate>Mon, 28 Sep 2026 13:18:14 GMT</lastBuildDate>
+<lastBuildDate>Mon, 28 Sep 2026 13:18:24 GMT</lastBuildDate>
 <item>
 <title>Welcome to the new home of CityVision TV</title>
 <link>https://cityvisiontv.com.au/stories/welcome-to-the-new-cityvision-tv.html</link>
@@ -46,14 +46,6 @@
 <pubDate>Sat, 26 Sep 2026 03:00:00 GMT</pubDate>
 <category>Kurakani</category>
 <description>Long-form conversations with members of the Nepali community in Australia. Listen now on Spotify.</description>
-</item>
-<item>
-<title>Diaspora Talk with Dr. Bharat Raj Poudel</title>
-<link>https://cityvisiontv.com.au/stories/diaspora-talk-with-dr-bharat-raj-poudel.html</link>
-<guid isPermaLink="true">https://cityvisiontv.com.au/stories/diaspora-talk-with-dr-bharat-raj-poudel.html</guid>
-<pubDate>Fri, 25 Sep 2026 01:00:00 GMT</pubDate>
-<category>Diaspora Talk</category>
-<description>Our talk show exploring the issues that shape life for Nepali people living abroad.</description>
 </item>
 </channel>
 </rss>
