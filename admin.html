@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Newsroom | CityVision TV</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="favicon.png">
+<meta name="theme-color" content="#2b0782">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Montserrat:wght@300;400;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body class="adm">
+
+<!-- ============ CONNECT ============ -->
+<section class="adm-connect" id="vConnect" hidden>
+  <div class="ac-card">
+    <div class="ac-brand" id="acBrand"></div>
+    <h1>Newsroom</h1>
+    <p class="ac-lead">Publish stories, videos and quick updates to cityvisiontv.com.au. Connect once on each device you use.</p>
+    <form id="connectForm">
+      <div class="field"><label for="tok">GitHub access token</label>
+        <input id="tok" type="password" autocomplete="off" placeholder="github_pat_…" required></div>
+      <label class="check"><input type="checkbox" id="remember" checked> Keep me signed in on this device</label>
+      <details class="ac-adv"><summary>Repository settings</summary>
+        <div class="ac-row">
+          <div class="field"><label for="gOwner">Owner</label><input id="gOwner"></div>
+          <div class="field"><label for="gRepo">Repository</label><input id="gRepo"></div>
+          <div class="field"><label for="gBranch">Branch</label><input id="gBranch"></div>
+        </div>
+      </details>
+      <button class="btn btn--indigo ac-go" type="submit">Connect newsroom</button>
+      <p class="ac-err" id="connectErr" role="alert"></p>
+    </form>
+    <details class="ac-help" open>
+      <summary>How do I get a token? (2 minutes, once)</summary>
+      <ol>
+        <li>Sign in to GitHub with an account that can edit the website repository.</li>
+        <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings &rarr; Developer settings &rarr; Fine-grained tokens &rarr; Generate new token</a>.</li>
+        <li>Name it <b>CityVision Newsroom</b>, choose an expiry (1 year is fine), and under <b>Repository access</b> pick <b>Only select repositories</b> &rarr; <b id="repoName">CityVisionTv-Aus</b>.</li>
+        <li>Under <b>Permissions &rarr; Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+        <li>Click <b>Generate token</b>, copy it and paste it above.</li>
+      </ol>
+      <p class="muted">Your token is stored only in this browser and is sent only to GitHub. Anyone with the token can edit the site, so keep it private.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div class="adm-app" id="vApp" hidden>
+  <header class="adm-top">
+    <a class="adm-brand brand" href="admin.html" id="topBrand"></a>
+    <span class="adm-badge">Newsroom</span>
+    <div class="adm-top-r">
+      <a class="btn btn--ghost btn--sm" href="index.html" target="_blank" rel="noopener">View site</a>
+      <div class="adm-user" id="userBox"></div>
+      <button class="btn btn--sm adm-out" id="signOut" title="Sign out on this device">Sign out</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <main class="adm-main" id="vDash">
+    <div class="adm-head">
+      <div><h1>Stories</h1><p class="muted" id="dashSub">Loading…</p></div>
+      <div class="new-group">
+        <button class="btn btn--red" data-new="article">+ New article</button>
+        <button class="btn btn--ghost" data-new="video">+ Video</button>
+        <button class="btn btn--ghost" data-new="update">+ Quick update</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="adm-tools">
+      <div class="seg" id="statusSeg">
+        <button class="on" data-s="all">All</button><button data-s="published">Published</button><button data-s="draft">Drafts</button>
+      </div>
+      <input class="adm-search" id="dashSearch" type="search" placeholder="Search stories…">
+    </div>
+    <div class="rows" id="rows"><div class="sk" style="height:300px"></div></div>
+  </main>
+
+  <!-- EDITOR -->
+  <main class="adm-main adm-editor" id="vEdit" hidden>
+    <div class="ed-bar">
+      <button class="btn btn--ghost btn--sm" id="backBtn">&larr; All stories</button>
+      <span class="ed-state" id="edState"></span>
+      <div class="ed-bar-r">
+        <button class="btn btn--ghost btn--sm" id="previewBtn">Preview</button>
+        <button class="btn btn--ghost btn--sm" id="draftBtn">Save draft</button>
+        <button class="btn btn--red btn--sm" id="publishBtn">Publish</button>
+      </div>
+    </div>
+    <div class="ed-grid">
+      <div class="ed-main">
+        <div class="type-seg seg" id="typeSeg">
+          <button data-t="article" class="on">Article</button><button data-t="video">Video</button><button data-t="update">Quick update</button>
+        </div>
+        <textarea id="fTitle" class="ed-title" rows="1" placeholder="Headline"></textarea>
+        <textarea id="fSummary" class="ed-dek" rows="2" placeholder="Summary: one or two sentences that appear under the headline and on social media"></textarea>
+        <div class="field ed-video" id="videoField" hidden>
+          <label for="fVideo">YouTube or Facebook video link</label>
+          <input id="fVideo" placeholder="https://www.youtube.com/watch?v=…">
+          <div id="videoPrev" class="vprev"></div>
+        </div>
+        <div class="rte">
+          <div class="rte-bar" id="rteBar">
+            <select data-cmd="block" aria-label="Text style"><option value="p">Paragraph</option><option value="h2">Heading</option><option value="h3">Subheading</option></select>
+            <span class="sep"></span>
+            <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+            <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button data-cmd="link" title="Add link">Link</button>
+            <span class="sep"></span>
+            <button data-cmd="insertUnorderedList" title="Bulleted list">&bull; List</button>
+            <button data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+            <button data-cmd="quote" title="Pull quote">&ldquo; Quote</button>
+            <button data-cmd="hr" title="Divider">&mdash;</button>
+            <span class="sep"></span>
+            <button data-cmd="image" title="Insert photo">Photo</button>
+            <button data-cmd="video" title="Embed a YouTube or Facebook video">Video</button>
+            <span class="sep"></span>
+            <button data-cmd="undo" title="Undo">&#8630;</button>
+            <button data-cmd="redo" title="Redo">&#8631;</button>
+            <button data-cmd="removeFormat" title="Clear formatting">Clear</button>
+          </div>
+          <div id="fBody" class="rte-body prose" contenteditable="true" data-ph="Write your story here. Paste from Word or Google Docs and the formatting will be cleaned up automatically."></div>
+          <div class="rte-foot"><span id="wc">0 words</span><span id="autosave"></span></div>
+        </div>
+      </div>
+
+      <aside class="ed-side">
+        <div class="ed-box">
+          <h3>Publishing</h3>
+          <div class="field"><label for="fDate">Publish date &amp; time</label><input id="fDate" type="datetime-local"></div>
+          <label class="check"><input type="checkbox" id="fFeatured"> <span><b>Lead story</b><small>Show as the big story at the top of the homepage</small></span></label>
+          <label class="check"><input type="checkbox" id="fBreaking"> <span><b>Breaking</b><small>Red label and highlighted in the ticker for 3 days</small></span></label>
+        </div>
+        <div class="ed-box">
+          <h3>Main image</h3>
+          <label class="drop" id="drop"><input type="file" id="imgFile" accept="image/*" hidden>
+            <span class="drop-empty" id="dropEmpty"><b>Drop a photo here</b><small>or click to choose. It is resized and optimised automatically.</small></span>
+            <img id="dropImg" alt="" hidden>
+          </label>
+          <div class="img-actions" id="imgActions" hidden><button class="btn btn--ghost btn--sm" id="imgRemove">Remove</button></div>
+          <div class="field"><label for="fImageUrl">…or paste an image link</label><input id="fImageUrl" placeholder="https://…"></div>
+          <div class="field"><label for="fAlt">Image description (for accessibility)</label><input id="fAlt" placeholder="e.g. Dancers performing at Dashain celebrations in Brisbane"></div>
+          <div class="field"><label for="fCaption">Caption / credit</label><input id="fCaption" placeholder="Photo: CityVision TV"></div>
+        </div>
+        <div class="ed-box">
+          <h3>Details</h3>
+          <div class="field"><label for="fCategory">Section</label><select id="fCategory"></select></div>
+          <div class="field"><label for="fShow">Show (optional)</label><select id="fShow"></select></div>
+          <div class="field"><label for="fAuthor">Author</label><input id="fAuthor" placeholder="Your name"></div>
+          <div class="field"><label for="fTags">Tags</label><input id="fTags" placeholder="Dashain, Brisbane, Students"><small class="muted">Separate with commas</small></div>
+          <div class="field"><label for="fLink">Source link (optional)</label><input id="fLink" placeholder="https://…"></div>
+        </div>
+        <div class="ed-box">
+          <h3>Social preview</h3>
+          <div class="fbprev" id="fbPrev"></div>
+        </div>
+        <div class="ed-box ed-danger" id="dangerBox" hidden>
+          <button class="btn btn--ghost btn--sm danger" id="deleteBtn">Delete this story</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<!-- preview modal -->
+<div class="pv" id="pv" hidden>
+  <div class="pv-bar"><div class="seg" id="pvSeg"><button class="on" data-w="100%">Desktop</button><button data-w="400px">Mobile</button></div><button class="btn btn--light btn--sm" id="pvClose">Close preview</button></div>
+  <iframe id="pvFrame" title="Preview"></iframe>
+</div>
+
+<!-- publishing overlay -->
+<div class="busy" id="busy" hidden><div class="busy-card"><span class="spin"></span><b id="busyMsg">Publishing…</b><small id="busySub">Saving to the website</small></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="assets/config.js"></script>
+<script src="assets/build.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
