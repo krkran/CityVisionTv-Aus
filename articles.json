@@ -1,7 +1,31 @@
 {
  "version": 2,
- "updated": "2026-09-28T13:26:34.423Z",
+ "updated": "2026-09-28T13:28:46.017Z",
  "items": [
+  {
+   "id": "story-2026-09-28",
+   "type": "article",
+   "title": "नेपालमा बाढीपहिरोको कहर: २१ जनाको मृत्यु, सयौँ परिवार विस्थापित",
+   "summary": "संक्षिप्त सारांश: नेपालका विभिन्न जिल्लामा अविरल वर्षापछि आएको बाढीपहिरोमा परी कम्तीमा २१ जनाको मृत्यु, पाँच जना बेपत्ता र पाँच जना घाइते भएका छन्। हजारौँलाई सुरक्षित स्थानमा सारिएको छ भने बाढीले बस्ती, सडक र घरहरूमा ठूलो क्षति पुर्‍याएको छ।",
+   "category": "news",
+   "show": "",
+   "author": "Kiran Khanal",
+   "image": "media/2026/09/story-main-mula95tc.jpg",
+   "imageAlt": "",
+   "imageCaption": "",
+   "video": "",
+   "link": "",
+   "tags": [
+    "Nepal Floods"
+   ],
+   "featured": true,
+   "breaking": false,
+   "status": "published",
+   "date": "2026-09-28T13:26:00.000Z",
+   "readMins": 1,
+   "json": true,
+   "static": true
+  },
   {
    "id": "welcome-to-the-new-cityvision-tv",
    "type": "article",
@@ -17,7 +41,7 @@
    "link": "",
    "date": "2026-09-27T22:00:00.000Z",
    "updated": "",
-   "featured": true,
+   "featured": false,
    "breaking": false,
    "status": "published",
    "tags": [
