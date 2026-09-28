@@ -6,7 +6,7 @@
 <description>By Nepali, for Nepali. The digital home of the Nepali community in Australia.</description>
 <language>en-au</language>
 <atom:link href="https://cityvisiontv.com.au/feed.xml" rel="self" type="application/rss+xml"/>
-<lastBuildDate>Mon, 28 Sep 2026 13:18:24 GMT</lastBuildDate>
+<lastBuildDate>Mon, 28 Sep 2026 13:18:33 GMT</lastBuildDate>
 <item>
 <title>Welcome to the new home of CityVision TV</title>
 <link>https://cityvisiontv.com.au/stories/welcome-to-the-new-cityvision-tv.html</link>
@@ -38,14 +38,6 @@
 <pubDate>Sat, 26 Sep 2026 19:00:00 GMT</pubDate>
 <category>Community</category>
 <description>Find us wherever you watch, and turn on notifications so you never miss a new episode.</description>
-</item>
-<item>
-<title>Kurakani: the podcast sharing stories of the Nepali diaspora</title>
-<link>https://cityvisiontv.com.au/stories/kurakani-podcast-stories-of-the-diaspora.html</link>
-<guid isPermaLink="true">https://cityvisiontv.com.au/stories/kurakani-podcast-stories-of-the-diaspora.html</guid>
-<pubDate>Sat, 26 Sep 2026 03:00:00 GMT</pubDate>
-<category>Kurakani</category>
-<description>Long-form conversations with members of the Nepali community in Australia. Listen now on Spotify.</description>
 </item>
 </channel>
 </rss>

@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-09-28T13:18:24.350Z",
+ "updated": "2026-09-28T13:18:33.301Z",
  "items": [
   {
    "id": "welcome-to-the-new-cityvision-tv",
@@ -96,32 +96,6 @@
    "breaking": false,
    "status": "published",
    "tags": [],
-   "readMins": 1,
-   "static": true,
-   "json": true
-  },
-  {
-   "id": "kurakani-podcast-stories-of-the-diaspora",
-   "type": "article",
-   "title": "Kurakani: the podcast sharing stories of the Nepali diaspora",
-   "summary": "Long-form conversations with members of the Nepali community in Australia. Listen now on Spotify.",
-   "show": "kurakani",
-   "category": "diaspora",
-   "author": "CityVision TV",
-   "image": "",
-   "imageAlt": "",
-   "imageCaption": "",
-   "video": "",
-   "link": "",
-   "date": "2026-09-26T03:00:00.000Z",
-   "updated": "",
-   "featured": false,
-   "breaking": false,
-   "status": "published",
-   "tags": [
-    "Kurakani",
-    "Podcast"
-   ],
    "readMins": 1,
    "static": true,
    "json": true
