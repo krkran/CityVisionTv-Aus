@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-09-28T13:25:44.227Z",
+ "updated": "2026-09-28T13:26:34.423Z",
  "items": [
   {
    "id": "welcome-to-the-new-cityvision-tv",
@@ -121,32 +121,6 @@
    "tags": [
     "Kurakani",
     "Podcast"
-   ],
-   "readMins": 1,
-   "static": true,
-   "json": true
-  },
-  {
-   "id": "diaspora-talk-with-dr-bharat-raj-poudel",
-   "type": "article",
-   "title": "Diaspora Talk with Dr. Bharat Raj Poudel",
-   "summary": "Our talk show exploring the issues that shape life for Nepali people living abroad.",
-   "show": "diaspora-talk",
-   "category": "diaspora",
-   "author": "CityVision TV",
-   "image": "",
-   "imageAlt": "",
-   "imageCaption": "",
-   "video": "",
-   "link": "",
-   "date": "2026-09-25T01:00:00.000Z",
-   "updated": "",
-   "featured": false,
-   "breaking": false,
-   "status": "published",
-   "tags": [
-    "Diaspora Talk",
-    "Talk show"
    ],
    "readMins": 1,
    "static": true,
