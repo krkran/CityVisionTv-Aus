@@ -1,30 +1,31 @@
 {
  "version": 2,
- "updated": "2026-09-28T13:40:32.672Z",
+ "updated": "2026-09-29T13:48:55.518Z",
  "items": [
   {
    "id": "story-2026-09-28-3",
    "type": "article",
    "title": "सगरमाथादेखि प्रशान्त महासागरसम्म: जलवायु न्यायका लागि नेपाल र टापु राष्ट्रहरू एकजुट!",
    "summary": "संक्षिप्त सारांश: नेपालले संयुक्त राष्ट्रसंघमा अघि सारेको ‘सगरमाथादेखि समुद्रसम्म’ अभियानले हिमाली र प्रशान्त क्षेत्रका जलवायु सङ्कटमा परेका राष्ट्रहरूलाई साझा मञ्चमा ल्याउने प्रयास गरेको छ। जलवायु वित्त, पूर्वसूचना प्रणाली र अन्तर्राष्ट्रिय सहकार्यलाई केन्द्रमा राख्दै नेपालले जलवायु न्यायका लागि विश्वव्यापी पहल अघि बढाउन खोजेको छ।",
-   "category": "news",
    "show": "",
+   "category": "news",
    "author": "Kiran Khanal",
    "image": "media/2026/09/story-main-mulaohqq.jpg",
    "imageAlt": "",
    "imageCaption": "",
    "video": "",
    "link": "",
-   "tags": [
-    "Climate Change"
-   ],
+   "date": "2026-09-28T13:36:00.000Z",
+   "updated": "",
    "featured": false,
    "breaking": false,
    "status": "published",
-   "date": "2026-09-28T13:36:00.000Z",
+   "tags": [
+    "Climate Change"
+   ],
    "readMins": 2,
-   "json": true,
-   "static": true
+   "static": true,
+   "json": true
   },
   {
    "id": "story-2026-09-28-2",
@@ -66,7 +67,7 @@
    "link": "",
    "date": "2026-09-28T13:26:00.000Z",
    "updated": "2026-09-28T13:30:13.275Z",
-   "featured": true,
+   "featured": false,
    "breaking": false,
    "status": "published",
    "tags": [
@@ -75,6 +76,31 @@
    "readMins": 1,
    "static": true,
    "json": true
+  },
+  {
+   "id": "from-the-himalayas-to-bangkok-nepal-takes-its-first-steps-onto-the-eur",
+   "type": "article",
+   "title": "From the Himalayas to Bangkok: Nepal Takes Its First Steps onto the Eurovision Stage",
+   "summary": "Nepal will choose its first ever entry for the Eurovision Song Contest Asia on 7 October on Nepal Decides, with 11 artists competing for a place on the stage in Bangkok this November. After a hard stretch of political turmoil and natural disasters, this is Nepal's chance to send the world a message of hope and write its own story through music.",
+   "category": "events",
+   "show": "",
+   "author": "Kiran Khanal",
+   "image": "media/2026/09/from-the-himalayas-to-bangkok-nepal-take-main-mumq4wfn.jpg",
+   "imageAlt": "",
+   "imageCaption": "",
+   "video": "",
+   "link": "",
+   "tags": [
+    "Eurovision Asia",
+    "Nepal"
+   ],
+   "featured": true,
+   "breaking": false,
+   "status": "published",
+   "date": "2026-09-28T11:30:00.000Z",
+   "readMins": 2,
+   "json": true,
+   "static": true
   },
   {
    "id": "welcome-to-the-new-cityvision-tv",
