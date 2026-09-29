@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-09-29T13:48:55.518Z",
+ "updated": "2026-09-29T13:52:53.559Z",
  "items": [
   {
    "id": "story-2026-09-28-3",
@@ -30,8 +30,8 @@
   {
    "id": "story-2026-09-28-2",
    "type": "article",
-   "title": "बालेनको संयुक्त राष्ट्रसंघमा गर्जन: ‘जलवायु न्याय चाहियो, दया होइन!’",
-   "summary": "संक्षिप्त सारांश: प्रधानमन्त्री बालेन्द्र शाहले संयुक्त राष्ट्रसंघको ८१औँ महासभामा नेपालको विनाशकारी बाढीपहिरो, जलवायु न्याय र विकसित राष्ट्रहरूको जिम्मेवारीबारे धारिलो सम्बोधन गरेका छन्। ‘राहत, पुनर्स्थापना, पुनर्निर्माण’ सँगै ‘जिम्मेवारी, क्षतिपूर्ति र उत्थानशीलता’ को माग गर्दै उनले जलवायु सङ्कटको मूल्य नेपालजस्ता कमजोर राष्ट्रले मात्रै चुकाउन नहुने बताएका छन्।",
+   "title": "राष्ट्रसंघमा प्रधानमन्त्री शाह: ‘घर जलिरहेको बेला ५० वटा फाराम भराइँदैन’",
+   "summary": "प्रधानमन्त्री बालेन्द्र शाहले संयुक्त राष्ट्रसंघको ८१औँ महासभामा नेपालमा आएको विनाशकारी बाढीपहिरोलाई विश्वव्यापी जलवायु संकटको चेतावनीका रूपमा प्रस्तुत गर्दै प्रभावित राष्ट्रलाई तत्काल र झन्झटरहित अन्तर्राष्ट्रिय सहयोग माग गरेका छन्। उनले साना तथा विकासशील राष्ट्रको आवाजलाई विश्वमञ्चमा बराबर महत्व दिनुपर्नेमा पनि जोड दिए।",
    "show": "",
    "category": "news",
    "author": "Kiran Khanal",
@@ -41,7 +41,7 @@
    "video": "",
    "link": "",
    "date": "2026-09-28T13:33:00.000Z",
-   "updated": "",
+   "updated": "2026-09-29T13:52:51.784Z",
    "featured": false,
    "breaking": false,
    "status": "published",
@@ -82,25 +82,26 @@
    "type": "article",
    "title": "From the Himalayas to Bangkok: Nepal Takes Its First Steps onto the Eurovision Stage",
    "summary": "Nepal will choose its first ever entry for the Eurovision Song Contest Asia on 7 October on Nepal Decides, with 11 artists competing for a place on the stage in Bangkok this November. After a hard stretch of political turmoil and natural disasters, this is Nepal's chance to send the world a message of hope and write its own story through music.",
-   "category": "events",
    "show": "",
+   "category": "events",
    "author": "Kiran Khanal",
    "image": "media/2026/09/from-the-himalayas-to-bangkok-nepal-take-main-mumq4wfn.jpg",
    "imageAlt": "",
    "imageCaption": "",
    "video": "",
    "link": "",
+   "date": "2026-09-28T11:30:00.000Z",
+   "updated": "",
+   "featured": true,
+   "breaking": false,
+   "status": "published",
    "tags": [
     "Eurovision Asia",
     "Nepal"
    ],
-   "featured": true,
-   "breaking": false,
-   "status": "published",
-   "date": "2026-09-28T11:30:00.000Z",
    "readMins": 2,
-   "json": true,
-   "static": true
+   "static": true,
+   "json": true
   },
   {
    "id": "welcome-to-the-new-cityvision-tv",
