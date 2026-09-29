@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-09-29T13:52:53.559Z",
+ "updated": "2026-09-29T13:54:04.146Z",
  "items": [
   {
    "id": "story-2026-09-28-3",
@@ -49,31 +49,6 @@
     "Balen"
    ],
    "readMins": 2,
-   "static": true,
-   "json": true
-  },
-  {
-   "id": "story-2026-09-28",
-   "type": "article",
-   "title": "नेपालमा बाढीपहिरोको कहर: २१ जनाको मृत्यु, सयौँ परिवार विस्थापित",
-   "summary": "संक्षिप्त सारांश: नेपालका विभिन्न जिल्लामा अविरल वर्षापछि आएको बाढीपहिरोमा परी कम्तीमा २१ जनाको मृत्यु, पाँच जना बेपत्ता र पाँच जना घाइते भएका छन्। हजारौँलाई सुरक्षित स्थानमा सारिएको छ भने बाढीले बस्ती, सडक र घरहरूमा ठूलो क्षति पुर्‍याएको छ।",
-   "show": "",
-   "category": "news",
-   "author": "Kiran Khanal",
-   "image": "media/2026/09/story-main-mulabmbz.jpg",
-   "imageAlt": "",
-   "imageCaption": "",
-   "video": "",
-   "link": "",
-   "date": "2026-09-28T13:26:00.000Z",
-   "updated": "2026-09-28T13:30:13.275Z",
-   "featured": false,
-   "breaking": false,
-   "status": "published",
-   "tags": [
-    "Nepal Floods"
-   ],
-   "readMins": 1,
    "static": true,
    "json": true
   },
