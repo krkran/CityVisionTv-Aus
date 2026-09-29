@@ -614,3 +614,12 @@ figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-heig
 .ytc-more { display: inline-flex; align-items: center; height: 42px; padding: 0 16px; border-radius: 99px; border: 1.5px solid rgba(255, 255, 255, .25); font-weight: 600; font-size: 14px; }
 .ytc-more:hover { border-color: #fff; }
 .ytc-sub:hover { background: #d9002b; }
+
+/* translate button */
+.byline .tr-btn { margin-left: auto; }
+.tr-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 11px; border-radius: 99px; border: 1.5px solid var(--line-2); background: #fff; color: var(--indigo); font: 700 14px/1 var(--f-ui); white-space: nowrap; transition: border-color .2s, background .2s; }
+.tr-btn:lang(ne) span { font-family: "Mukta", var(--f-ui); font-size: 15px; font-weight: 600; }
+.tr-btn svg { width: 18px; height: 18px; }
+.tr-btn:hover { border-color: var(--indigo); background: var(--indigo-50); }
+.is-translated .tr-btn { display: none; }
+@media (max-width: 520px) { .byline { flex-wrap: wrap; } .byline .tr-btn { margin-left: 0; } }

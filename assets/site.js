@@ -23,6 +23,8 @@
   if (PAGE === 'home') active = 'home';
   $('#cv-header').outerHTML = CV.header(BASE, active);
   $('#cv-footer').outerHTML = CV.footer(BASE);
+  // Hide the translate button when the page is already being shown through Google Translate
+  if (/translate\.goog$/.test(location.hostname) || /translate\.google/.test(document.referrer)) document.documentElement.classList.add('is-translated');
   var toastEl = document.createElement('div'); toastEl.className = 'toast'; body.appendChild(toastEl);
   function toast(m) { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2600); }
 
