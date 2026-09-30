@@ -1,7 +1,31 @@
 {
  "version": 2,
- "updated": "2026-09-29T14:00:51.505Z",
+ "updated": "2026-09-30T09:22:19.764Z",
  "items": [
+  {
+   "id": "kanuni-rajyako-kasi-karabahi-pramanama-aadharit-hos-pratishodhama-hoin",
+   "type": "article",
+   "title": "कानुनी राज्यको कसी: कारबाही प्रमाणमा आधारित होस्, प्रतिशोधमा होइन",
+   "summary": "पूर्वप्रधानन्यायाधीश चोलेन्द्रशमशेर जबरालाई राति हिरासतमा लिइएको घटनाले सरकारको निष्पक्षता र कानुनी प्रक्रियामाथि गम्भीर प्रश्न उठाएको छ। गल्ती गर्ने जोसुकैमाथि कारबाही हुनुपर्छ, तर त्यो पारदर्शी कानुनी प्रक्रिया र नागरिकका मौलिक अधिकारको पूर्ण सम्मानसहित मात्र हुनुपर्छ।",
+   "category": "opinion",
+   "show": "",
+   "author": "Kiran Khanal",
+   "image": "media/2026/09/kanuni-rajyako-kasi-karabahi-pramanama-a-main-munwcd0z.jpg",
+   "imageAlt": "",
+   "imageCaption": "",
+   "video": "",
+   "link": "",
+   "tags": [
+    "Law"
+   ],
+   "featured": false,
+   "breaking": false,
+   "status": "published",
+   "date": "2026-09-30T09:17:00.000Z",
+   "readMins": 2,
+   "json": true,
+   "static": true
+  },
   {
    "id": "story-2026-09-28-3",
    "type": "article",
