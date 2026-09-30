@@ -25,6 +25,20 @@
   $('#cv-footer').outerHTML = CV.footer(BASE);
   // Hide the translate button when the page is already being shown through Google Translate
   if (/translate\.goog$/.test(location.hostname) || /translate\.google/.test(document.referrer)) document.documentElement.classList.add('is-translated');
+  /* Visitor stats (GoatCounter: no cookies, no personal data) */
+  (function () {
+    if (!/(^|\.)cityvisiontv\.com\.au$/.test(location.hostname)) return; // only count the live site
+    var code = (CFG.analytics && CFG.analytics.goatcounter) || 'cityvisiontv';
+    window.goatcounter = { path: function (p) {
+      var u = new URL(p, location.origin), path = u.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), q = u.searchParams;
+      if (path === '/section') path = q.get('show') ? '/shows/' + q.get('show') : q.get('c') ? '/' + q.get('c') : q.get('type') === 'video' ? '/watch' : '/search';
+      if (path === '/article' && q.get('id')) path = '/stories/' + q.get('id');
+      return path || '/';
+    } };
+    var s = document.createElement('script'); s.async = true; s.src = 'https://gc.zgo.at/count.js';
+    s.setAttribute('data-goatcounter', 'https://' + code + '.goatcounter.com/count');
+    document.head.appendChild(s);
+  })();
   var toastEl = document.createElement('div'); toastEl.className = 'toast'; body.appendChild(toastEl);
   function toast(m) { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2600); }
 

@@ -133,7 +133,7 @@
   }
   function loadIndex() {
     $('#dashSub').textContent = 'Loading…';
-    return readFile('articles.json').then(function (t) { S.index = parseIndex(t).sort(function (a, b) { return new Date(b.date) - new Date(a.date); }); drawDash(); })
+    return readFile('articles.json').then(function (t) { S.index = parseIndex(t).sort(function (a, b) { return new Date(b.date) - new Date(a.date); }); drawDash(); drawTraffic(); })
       .catch(function (e) { $('#rows').innerHTML = '<div class="rows-empty">Could not load stories: ' + esc(e.message) + '</div>'; });
   }
   function drawDash() {
@@ -148,11 +148,65 @@
     $('#rows').innerHTML = list.map(function (p) {
       var pills = '<span class="pill">' + (p.type === 'update' ? 'Update' : p.type === 'video' ? 'Video' : 'Article') + '</span>' + (p.featured ? '<span class="pill lead">Lead</span>' : '') + (p.breaking ? '<span class="pill brk">Breaking</span>' : '');
       var live = p.status !== 'draft' ? CV.postUrl(p, '') : '';
-      return '<div class="row" data-id="' + esc(p.id) + '">' + CV.media(p, '') + '<div><div class="row-t" data-edit>' + esc(p.title) + '</div><div class="row-m">' + pills + '<span>' + esc(CV.kicker(p)) + '</span>' + (p.author ? '<span>· ' + esc(p.author) + '</span>' : '') + '</div></div>' +
+      return '<div class="row" data-id="' + esc(p.id) + '">' + CV.media(p, '') + '<div><div class="row-t" data-edit>' + esc(p.title) + '</div><div class="row-m">' + pills + '<span>' + esc(CV.kicker(p)) + '</span>' + (p.author ? '<span>· ' + esc(p.author) + '</span>' : '') + (p.status !== 'draft' && p.static ? '<span class="views" data-views="' + esc(p.id) + '"></span>' : '') + '</div></div>' +
         '<div class="row-date">' + CV.fmtShort(p.date) + '<br><span class="muted">' + CV.fmtTime(p.date) + '</span></div>' +
         '<div class="row-st"><span class="pill ' + (p.status === 'draft' ? 'draft">Draft' : 'pub">Published') + '</span></div>' +
         '<div class="row-act"><button data-edit>Edit</button>' + (live ? '<a href="' + live + '" target="_blank" rel="noopener">View</a>' : '') + '<button class="del" data-del>Delete</button></div></div>';
     }).join('');
+    fillRowViews();
+  }
+
+  /* ---------- visitor stats (GoatCounter) ---------- */
+  var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+  var GC = { cache: {}, ok: null };
+  try { localStorage.setItem('skipgc', 't'); } catch (e) {} // don't count the newsroom team's own visits on this device
+  function gcCode() { return store.get('cv_gc_code') || (CFG.analytics && CFG.analytics.goatcounter) || 'cityvisiontv'; }
+  function gcCount(path, start) {
+    var key = path + '|' + (start || '');
+    if (GC.cache[key]) return GC.cache[key];
+    var u = 'https://' + gcCode() + '.goatcounter.com/counter/' + (path === 'TOTAL' ? 'TOTAL' : encodeURIComponent(path)) + '.json' + (start ? '?start=' + start : '');
+    GC.cache[key] = fetch(u).then(function (r) {
+      if (r.status === 404) return 0;           // page not viewed yet
+      if (!r.ok) { var e = new Error('stats ' + r.status); e.status = r.status; throw e; }
+      return r.json().then(function (d) { return parseInt(String(d.count || '0').replace(/[^0-9]/g, ''), 10) || 0; });
+    });
+    return GC.cache[key];
+  }
+  function fmtNum(n) { return n >= 10000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + 'k' : n.toLocaleString('en-AU'); }
+  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function drawTraffic() {
+    var host = $('#traffic'); if (!host) return;
+    var dash = 'https://' + gcCode() + '.goatcounter.com';
+    host.innerHTML = '<div class="tr-head"><h2>Visitors</h2><a class="btn btn--ghost btn--sm" href="' + dash + '" target="_blank" rel="noopener">Full stats &rarr;</a></div>' +
+      '<div class="tr-cards">' + [['today', 'Today'], ['week', 'Past 7 days'], ['month', 'Past 30 days'], ['all', 'All time']].map(function (x) { return '<div class="tr-card"><b data-tr="' + x[0] + '">&hellip;</b><span>' + x[1] + '</span></div>'; }).join('') + '</div>' +
+      '<div class="tr-top"><h3>Most read in the past 30 days</h3><ol id="trTop"><li class="muted">Loading&hellip;</li></ol></div>' +
+      '<p class="tr-note muted">Views update every few hours. Visits from this device are not counted.</p>';
+    Promise.all([gcCount('TOTAL', todayISO()), gcCount('TOTAL', 'week'), gcCount('TOTAL', 'month'), gcCount('TOTAL')]).then(function (v) {
+      GC.ok = true;
+      ['today', 'week', 'month', 'all'].forEach(function (k, i) { $('[data-tr="' + k + '"]').textContent = fmtNum(v[i]); });
+      var pub = S.index.filter(function (p) { return p.status !== 'draft' && p.static; }).slice(0, 40);
+      return Promise.all(pub.map(function (p) { return gcCount('/stories/' + p.id, 'month').then(function (n) { return { p: p, n: n }; }, function () { return { p: p, n: 0 }; }); }));
+    }).then(function (rows) {
+      if (!rows) return;
+      rows = rows.filter(function (r) { return r.n > 0; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 5);
+      $('#trTop').innerHTML = rows.length ? rows.map(function (r) { return '<li><a href="' + CV.postUrl(r.p, '') + '" target="_blank" rel="noopener">' + esc(r.p.title) + '</a><span>' + fmtNum(r.n) + ' views</span></li>'; }).join('') : '<li class="muted">No story views yet. Share a story to get things started!</li>';
+      fillRowViews();
+    }).catch(function () {
+      GC.ok = false;
+      host.innerHTML = '<div class="tr-setup"><h2>Visitor stats aren&rsquo;t connected yet</h2>' +
+        '<ol><li>Sign up at <a href="https://www.goatcounter.com/signup" target="_blank" rel="noopener">goatcounter.com</a> and choose the code <b>' + esc(gcCode()) + '</b>.</li>' +
+        '<li>In GoatCounter go to <b>Settings</b> and tick <b>&ldquo;Allow adding visitor counts on your website&rdquo;</b>, then save.</li>' +
+        '<li>Come back here and refresh. Numbers appear once people start visiting.</li></ol>' +
+        '<form class="tr-code" id="gcForm"><label for="gcCode">Signed up with a different code?</label><div><input id="gcCode" value="' + esc(gcCode()) + '" autocomplete="off"><button class="btn btn--indigo btn--sm">Save</button></div></form></div>';
+      $('#gcForm').addEventListener('submit', function (e) { e.preventDefault(); var v = $('#gcCode').value.trim().toLowerCase().replace(/\.goatcounter\.com.*$/, '').replace(/^https?:\/\//, ''); if (v) { store.set('cv_gc_code', v); GC.cache = {}; drawTraffic(); } });
+    });
+  }
+  function fillRowViews() {
+    if (GC.ok !== true) return;
+    $$('[data-views]').forEach(function (el) {
+      if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1');
+      gcCount('/stories/' + el.getAttribute('data-views')).then(function (n) { el.innerHTML = EYE + fmtNum(n) + (n === 1 ? ' view' : ' views'); }, function () {});
+    });
   }
   $('#statusSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.filter = b.getAttribute('data-s'); $$('#statusSeg button').forEach(function (x) { x.classList.toggle('on', x === b); }); drawDash(); });
   $('#dashSearch').addEventListener('input', function (e) { S.q = e.target.value; drawDash(); });
