@@ -1,30 +1,53 @@
 {
  "version": 2,
- "updated": "2026-09-30T09:22:19.764Z",
+ "updated": "2026-10-01T13:01:00.125Z",
  "items": [
+  {
+   "id": "pararashtramantri-shishir-khanalako-astreliya-bhraman-badhi-jalawayu-r",
+   "type": "article",
+   "title": "परराष्ट्रमन्त्री शिशिर खनालको अस्ट्रेलिया भ्रमण: बाढी, जलवायु र जलविद्युत्मा नयाँ साझेदारीको सम्भावना",
+   "summary": "परराष्ट्रमन्त्री शिशिर खनाल अक्टोबर ८ मा अस्ट्रेलियाकी विदेशमन्त्री पेनी वोङसँग भेटवार्ता गर्दैछन्। प्रधानमन्त्री बालेन्द्र शाहको राष्ट्रसंघ सम्बोधनले जलवायु न्यायमा विश्वको ध्यान खिचेपछि हुन लागेको यो भ्रमणले नेपाल–अस्ट्रेलिया सम्बन्धलाई नयाँ दिशा दिन सक्छ।",
+   "category": "news",
+   "show": "",
+   "author": "Kiran Khanal",
+   "image": "media/2026/10/pararashtramantri-shishir-khanalako-astr-main-mupjg2br.jpg",
+   "imageAlt": "परराष्ट्रमन्त्री शिशिर खनाल र अस्ट्रेलियाकी विदेशमन्त्री पेनी वोङ सेप्टेम्बर २५ मा न्यूयोर्कमा राष्ट्रसंघ महासभाका क्रममा भेटवार्ता गर्दै। दुवैबीच अब अक्टोबर ८ मा अस्ट्रेलियामा फेरि भेट हुँदैछ।",
+   "imageCaption": "",
+   "video": "",
+   "link": "",
+   "tags": [],
+   "featured": false,
+   "breaking": true,
+   "status": "published",
+   "date": "2026-10-01T12:55:00.000Z",
+   "readMins": 3,
+   "json": true,
+   "static": true
+  },
   {
    "id": "kanuni-rajyako-kasi-karabahi-pramanama-aadharit-hos-pratishodhama-hoin",
    "type": "article",
    "title": "कानुनी राज्यको कसी: कारबाही प्रमाणमा आधारित होस्, प्रतिशोधमा होइन",
    "summary": "पूर्वप्रधानन्यायाधीश चोलेन्द्रशमशेर जबरालाई राति हिरासतमा लिइएको घटनाले सरकारको निष्पक्षता र कानुनी प्रक्रियामाथि गम्भीर प्रश्न उठाएको छ। गल्ती गर्ने जोसुकैमाथि कारबाही हुनुपर्छ, तर त्यो पारदर्शी कानुनी प्रक्रिया र नागरिकका मौलिक अधिकारको पूर्ण सम्मानसहित मात्र हुनुपर्छ।",
-   "category": "opinion",
    "show": "",
+   "category": "opinion",
    "author": "Kiran Khanal",
    "image": "media/2026/09/kanuni-rajyako-kasi-karabahi-pramanama-a-main-munwcd0z.jpg",
    "imageAlt": "",
    "imageCaption": "",
    "video": "",
    "link": "",
-   "tags": [
-    "Law"
-   ],
+   "date": "2026-09-30T09:17:00.000Z",
+   "updated": "",
    "featured": false,
    "breaking": false,
    "status": "published",
-   "date": "2026-09-30T09:17:00.000Z",
+   "tags": [
+    "Law"
+   ],
    "readMins": 2,
-   "json": true,
-   "static": true
+   "static": true,
+   "json": true
   },
   {
    "id": "story-2026-09-28-3",
