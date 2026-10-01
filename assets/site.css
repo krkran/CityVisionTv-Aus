@@ -76,15 +76,17 @@ svg { width: 1em; height: 1em; flex: none; }
 @media (max-width: 720px) { .util-tag { display: none; } }
 
 /* ---------- masthead ---------- */
-.mast { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, .97); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
-.mast-in { display: flex; align-items: center; height: 76px; gap: 12px; transition: height .25s var(--ease); }
-.mast.scrolled .mast-in { height: 60px; }
+.mast { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, .97); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); transition: box-shadow .3s var(--ease); }
+.mast.scrolled { box-shadow: 0 6px 20px rgba(20, 3, 56, .08); }
+.mast-in { display: flex; align-items: center; height: 76px; gap: 12px; }
 .mast-actions { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 .mast-watch { margin-left: 8px; }
 .burger { display: none; }
 .brand { display: inline-flex; align-items: center; gap: 10px; }
-.brand-mark { height: 44px; width: auto; transition: height .25s var(--ease); }
-.mast.scrolled .brand-mark { height: 36px; }
+/* The header keeps a fixed height while scrolling (changing it makes the page jump); only the logo eases smaller */
+.mast .brand { transform-origin: left center; transition: transform .3s var(--ease); will-change: transform; }
+.mast.scrolled .brand { transform: scale(.86); }
+.brand-mark { height: 44px; width: auto; }
 .brand-word { display: flex; flex-direction: column; line-height: 1; }
 .bw-city { font: 300 15px/1 var(--f-brand); letter-spacing: .72em; color: var(--indigo); margin-right: -.72em; }
 .bw-vision { font: 800 22px/1 var(--f-brand); letter-spacing: .12em; color: var(--red); margin-top: 3px; }
@@ -124,6 +126,7 @@ svg { width: 1em; height: 1em; flex: none; }
   .burger { display: inline-grid; }
   .mast-in { height: 64px; }
   .brand { margin: 0 auto; }
+  .mast .brand { transform-origin: center; }
   .mast-actions { margin-left: 0; }
   .mast-watch span { display: none; }
   .mast-watch { width: 36px; padding: 0; margin-left: 2px; }

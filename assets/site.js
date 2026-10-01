@@ -43,12 +43,20 @@
   function toast(m) { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2600); }
 
   var mast = $('#mast');
+  var isScrolled = false, ticking = false;
   var onScroll = function () {
-    mast.classList.toggle('scrolled', scrollY > 40);
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(function () { ticking = false; update(); });
+  };
+  var update = function () {
+    var y = window.scrollY || 0;
+    // two different thresholds so the header never flickers back and forth
+    if (!isScrolled && y > 80) { isScrolled = true; mast.classList.add('scrolled'); }
+    else if (isScrolled && y < 20) { isScrolled = false; mast.classList.remove('scrolled'); }
     var pr = $('#progress');
     if (pr) { var st = $('.story-body'); if (st) { var r = st.getBoundingClientRect(); var p = Math.min(1, Math.max(0, (innerHeight * .4 - r.top) / r.height)); pr.style.width = (p * 100) + '%'; } }
   };
-  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  addEventListener('scroll', onScroll, { passive: true }); update();
 
   function openLayer(el) { closeLayers(); el.classList.add('open'); el.setAttribute('aria-hidden', 'false'); if (el.id !== 'bellPanel') body.style.overflow = 'hidden'; }
   function closeLayers() { $$('.drawer.open,.search-ov.open,.bellpanel.open,.lb.open').forEach(function (e) { e.classList.remove('open'); e.setAttribute('aria-hidden', 'true'); if (e.classList.contains('lb')) $('.lb-player', e).innerHTML = ''; }); body.style.overflow = ''; $$('.nl-drop.open').forEach(function (d) { d.classList.remove('open'); }); }
