@@ -28,6 +28,10 @@ Tips:
 
 The homepage Watch section, the Shorts row, show pages and the sidebar player all come from your YouTube channel automatically. A GitHub Action (`.github/workflows/youtube.yml`) checks the channel every hour and updates `youtube.json`, so new uploads appear on the site on their own. Videos are matched to shows by their title (for example, anything with "Hamro Story" in the title appears on the Hamro Story page). You can run it straight away from the repo's **Actions** tab → Refresh YouTube videos → Run workflow.
 
+## Ads
+
+Open the newsroom and click **Ads**. You can add a **pop-up window** (picture, headline, short text and a button; shows once per visitor per day and can be closed) or a **side banner** (next to the article on computers, inside the article on phones), choose which articles each ad runs on, set start and end dates, and switch each ad, or all ads, on and off. Ads are saved in `ads.json`, images in `media/ads/`. Tick **No ads on this story** in the story editor for sensitive news.
+
 ## Changing shows, sections or social links
 
 Edit `assets/config.js`. Show logos live in `assets/logos/`. Each show's `yt` list sets which words in a YouTube title link a video to that show.

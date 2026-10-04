@@ -326,6 +326,7 @@
     }
     h += '<div class="wrap split"><div>' + blocks + '</div><aside class="split-side"><div class="sticky">' + sidebar() + '</div></aside></div>';
     root.innerHTML = h;
+    showAds({ home: true });
   };
 
   function sidebar(exclude) {
@@ -417,7 +418,129 @@
     if (me) rel.sort(function (a, b) { return ((b.show && b.show === me.show) * 2 + (b.category === me.category)) - ((a.show && a.show === me.show) * 2 + (a.category === me.category)); });
     rel = rel.slice(0, 4);
     if (rel.length) $('#more').innerHTML = '<div class="sec-h"><h2><span class="dot"></span>More from CityVision</h2><a class="lnk" href="' + BASE + 'updates">Latest ' + I.arrow + '</a></div><div class="row4" style="border:0;padding:0;margin:0">' + rel.map(function (p) { return card(p, 'std'); }).join('') + '</div>';
+    showAds(me || { id: id });
   };
+
+  /* ---------- ads (managed in the newsroom, saved in ads.json) ---------- */
+  function localDay() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function track(name) {
+    var n = 0;
+    (function go() {
+      if (window.goatcounter && window.goatcounter.count) { try { window.goatcounter.count({ path: name, title: name, event: true }); } catch (e) {} }
+      else if (++n < 20) setTimeout(go, 500);
+    })();
+  }
+  function pickAd(list) {
+    if (!list.length) return null;
+    // most specific targeting wins: chosen articles, then sections/shows, then all articles
+    var rank = function (a) { var m = (a.target || {}).mode; return m === 'stories' ? 3 : m === 'groups' ? 2 : 1; };
+    var best = Math.max.apply(null, list.map(rank));
+    var top = list.filter(function (a) { return rank(a) === best; });
+    return top[Math.floor(Math.random() * top.length)];
+  }
+  function adMatches(a, p) {
+    var t = a.target || { mode: 'all' };
+    if (p.home) return !!t.home;
+    if (t.mode === 'none') return false;
+    if (t.mode === 'stories') return (t.stories || []).indexOf(p.id) > -1;
+    if ((t.exclude || []).indexOf(p.id) > -1) return false;
+    if (t.mode === 'groups') return (t.sections || []).indexOf(p.category) > -1 || (!!p.show && (t.shows || []).indexOf(p.show) > -1);
+    return true;
+  }
+  function seenToday(a) { return LS.get('cv_pop_' + a.id) === localDay(); }
+  function fromSearch() { try { return /(^|\.)google\./.test(new URL(document.referrer).hostname); } catch (e) { return false; } }
+  function showAds(p) {
+    if (!p || p.noAds || document.querySelector('.cv-banner, .cv-pop, .cv-fs')) return;
+    fetch(BASE + 'ads.json?v=' + Math.floor(Date.now() / 120000), { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || d.enabled === false || !Array.isArray(d.ads)) return;
+        var today = localDay();
+        var live = d.ads.filter(function (a) {
+          if (!a.active || !a.image) return false;
+          if (a.start && a.start > today) return false;
+          if (a.end && a.end < today) return false;
+          return adMatches(a, p);
+        });
+        var banner = pickAd(live.filter(function (a) { return a.type === 'banner'; }));
+        if (banner) renderBanner(banner, p.home);
+        // one pop-up per page: an unseen full-screen ad first, otherwise the small pop-up.
+        // Visitors arriving from Google search get the small one instead of a full-screen takeover.
+        var fs = fromSearch() ? null : pickAd(live.filter(function (a) { return a.type === 'fullscreen' && !seenToday(a); }));
+        if (fs) return renderFullscreen(fs);
+        var pop = pickAd(live.filter(function (a) { return a.type === 'popup' && !seenToday(a); }));
+        if (!pop && fromSearch()) pop = pickAd(live.filter(function (a) { return a.type === 'fullscreen' && !seenToday(a); }));
+        if (pop) renderPopup(pop);
+      }).catch(function () {});
+  }
+  function adLink(a, inner, cls) {
+    return a.link ? '<a class="' + (cls || '') + '" href="' + esc(a.link) + '" target="_blank" rel="sponsored noopener" data-adclick="' + esc(a.id) + '">' + inner + '</a>' : '<span class="' + (cls || '') + '">' + inner + '</span>';
+  }
+  function renderBanner(a, home) {
+    var html = '<span class="cv-ad-label">Advertisement</span>' + adLink(a, '<img src="' + esc(CV.url(BASE, a.image)) + '" alt="' + esc(a.name || 'Advertisement') + '" loading="lazy">');
+    var side = home ? $('.split-side .sticky') : $('#storySide .sticky');
+    if (side) { var b = document.createElement('div'); b.className = 'cv-banner' + (home ? ' cv-banner--home' : ''); b.innerHTML = html; side.insertBefore(b, side.firstChild); }
+    var bodyEl = !home && $('.story-body');
+    if (bodyEl) {
+      var ps = $$(':scope > p', bodyEl), after = ps[2] || ps[ps.length - 1];
+      var m = document.createElement('div'); m.className = 'cv-banner cv-banner--inline'; m.innerHTML = html;
+      if (after) after.parentNode.insertBefore(m, after.nextSibling); else bodyEl.appendChild(m);
+    }
+    track('ad-view-' + a.id);
+  }
+  function popText(a) {
+    if (!a.title && !a.text && !(a.link && a.button)) return '';
+    return '<div class="cv-pop-b">' + (a.title ? '<b>' + esc(a.title) + '</b>' : '') + (a.text ? '<p>' + esc(a.text) + '</p>' : '') + (a.link && (a.button || a.type === 'popup') ? adLink(a, esc(a.button || 'Learn more'), 'cv-pop-btn') : '') + '</div>';
+  }
+  function renderPopup(a) {
+    var key = 'cv_pop_' + a.id, today = localDay();
+    var el = document.createElement('div');
+    el.className = 'cv-pop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Advertisement');
+    el.innerHTML = '<button class="cv-pop-x" type="button" aria-label="Close advertisement">&times;</button><span class="cv-ad-label">Advertisement</span>' +
+      adLink(a, '<img src="' + esc(CV.url(BASE, a.image)) + '" alt="' + esc(a.title || a.name || '') + '">', 'cv-pop-img') + popText(a);
+    var close = function () { LS.set(key, today); el.classList.remove('show'); setTimeout(function () { el.remove(); }, 400); document.removeEventListener('keydown', onKey); };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+    el.querySelector('.cv-pop-x').addEventListener('click', close);
+    setTimeout(function () {
+      body.appendChild(el);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('show'); }); });
+      document.addEventListener('keydown', onKey);
+      LS.set(key, today);
+      track('ad-view-' + a.id);
+    }, 2500);
+  }
+  function renderFullscreen(a) {
+    var key = 'cv_pop_' + a.id, today = localDay();
+    var img = CV.url(BASE, a.image), mob = a.imageMobile ? CV.url(BASE, a.imageMobile) : '';
+    var pic = '<picture>' + (mob ? '<source media="(max-width: 640px)" srcset="' + esc(mob) + '">' : '') + '<img src="' + esc(img) + '" alt="' + esc(a.title || a.name || 'Advertisement') + '"></picture>';
+    var el = document.createElement('div');
+    el.className = 'cv-fs'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Advertisement');
+    el.innerHTML = '<div class="cv-fs-card"><button class="cv-pop-x" type="button" aria-label="Close advertisement">&times;</button><span class="cv-ad-label">Advertisement</span>' +
+      adLink(a, pic, 'cv-fs-img') + popText(a) + '</div><button class="cv-fs-skip" type="button">Continue to CityVision TV</button>';
+    var prevOverflow = '';
+    var close = function () {
+      LS.set(key, today); el.classList.remove('show'); document.documentElement.style.overflow = prevOverflow;
+      setTimeout(function () { el.remove(); }, 350); document.removeEventListener('keydown', onKey);
+    };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+    el.addEventListener('click', function (e) {
+      if (e.target === el || e.target.closest('.cv-pop-x, .cv-fs-skip')) close();
+    });
+    setTimeout(function () {
+      body.appendChild(el);
+      prevOverflow = document.documentElement.style.overflow; document.documentElement.style.overflow = 'hidden';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('show'); el.querySelector('.cv-pop-x').focus({ preventScroll: true }); }); });
+      document.addEventListener('keydown', onKey);
+      LS.set(key, today);
+      track('ad-view-' + a.id);
+    }, 1200);
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-adclick]'); if (!a) return;
+    track('ad-click-' + a.getAttribute('data-adclick'));
+    var pop = a.closest('.cv-pop'); if (pop) { pop.classList.remove('show'); setTimeout(function () { pop.remove(); }, 400); }
+    var fs = a.closest('.cv-fs'); if (fs) { var x = fs.querySelector('.cv-pop-x'); if (x) x.click(); }
+  });
 
   // Dynamic article reader (article.html?id=…) — fallback when a static page does not exist
   R.article = function () {

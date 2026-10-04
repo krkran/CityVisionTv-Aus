@@ -54,6 +54,7 @@
   <header class="adm-top">
     <a class="adm-brand brand" href="admin.html" id="topBrand"></a>
     <span class="adm-badge">Newsroom</span>
+    <nav class="adm-nav"><a href="#stories" data-nav="stories" class="on">Stories</a><a href="#ads" data-nav="ads">Ads</a></nav>
     <div class="adm-top-r">
       <a class="btn btn--ghost btn--sm" href="index.html" target="_blank" rel="noopener">View site</a>
       <div class="adm-user" id="userBox"></div>
@@ -78,6 +79,15 @@
         <button class="on" data-s="all">All</button><button data-s="published">Published</button><button data-s="draft">Drafts</button>
       </div>
       <input class="adm-search" id="dashSearch" type="search" placeholder="Search stories…">
+    </div>
+    <div class="adm-filters">
+      <select id="fltSec" aria-label="Section"><option value="">All sections</option></select>
+      <select id="fltShow" aria-label="Show"><option value="">All shows</option></select>
+      <select id="fltType" aria-label="Type"><option value="">All types</option><option value="article">Articles</option><option value="video">Videos</option><option value="update">Quick updates</option></select>
+      <select id="fltSort" aria-label="Sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="views">Most viewed</option><option value="az">A to Z</option></select>
+      <label class="grp-toggle"><input type="checkbox" id="fltGroup"> Group by section</label>
+      <button class="lnk-btn" id="fltClear" hidden>Clear filters</button>
+      <span class="flt-count muted" id="fltCount"></span>
     </div>
     <div class="rows" id="rows"><div class="sk" style="height:300px"></div></div>
   </main>
@@ -136,6 +146,7 @@
           <div class="field"><label for="fDate">Publish date &amp; time</label><input id="fDate" type="datetime-local"></div>
           <label class="check"><input type="checkbox" id="fFeatured"> <span><b>Lead story</b><small>Show as the big story at the top of the homepage</small></span></label>
           <label class="check"><input type="checkbox" id="fBreaking"> <span><b>Breaking</b><small>Red label and highlighted in the ticker for 3 days</small></span></label>
+          <label class="check"><input type="checkbox" id="fNoAds"> <span><b>No ads on this story</b><small>Use for sensitive news, like disasters or deaths</small></span></label>
         </div>
         <div class="ed-box">
           <h3>Main image</h3>
@@ -165,6 +176,103 @@
         </div>
       </aside>
     </div>
+  </main>
+  <!-- ADS LIST -->
+  <main class="adm-main" id="vAds" hidden>
+    <div class="adm-head">
+      <div><h1>Ads</h1><p class="muted">Full-screen pop-ups, small pop-ups and side banners, on your front page and articles.</p></div>
+      <div class="new-group">
+        <button class="btn btn--red" data-newad="fullscreen">+ Full-screen pop-up</button>
+        <button class="btn btn--ghost" data-newad="popup">+ Small pop-up</button>
+        <button class="btn btn--ghost" data-newad="banner">+ Side banner</button>
+      </div>
+    </div>
+    <div class="ads-master" id="adsMaster"></div>
+    <a class="place-cta" href="#ads/placement"><span><b>Choose which ads run where</b><small>See the front page, every article and every ad in one table. Apply an ad to everything, or pick and choose for each sponsor.</small></span><span class="btn btn--indigo btn--sm">Open &rarr;</span></a>
+    <div class="rows" id="adRows"><div class="sk" style="height:200px"></div></div>
+    <div class="ads-help">
+      <h3>Sizes to give advertisers</h3>
+      <table>
+        <tr><th>Ad type</th><th>Image size</th><th>Where it shows</th></tr>
+        <tr><td><b>Full-screen pop-up</b><br><span class="tier t1">Premium</span></td><td>1600 &times; 900 px (16:9) for computers<br><span class="muted">plus an optional 1080 &times; 1350 px (4:5) version for phones. Headline, text and button are optional</span></td><td>Appears in the middle of the screen over a dimmed background when the front page or an article opens. Readers close it with the X or by tapping outside it. Shows once per visitor per day.</td></tr>
+        <tr><td><b>Small pop-up</b><br><span class="tier t2">Standard</span></td><td>1200 &times; 800 px (3:2), JPG or PNG<br><span class="muted">plus a headline, one or two lines of text, and a button</span></td><td>A small window in the bottom corner of the article on computers, and at the bottom of the screen on phones. Readers can close it. Shows once per visitor per day.</td></tr>
+        <tr><td><b>Side banner</b><br><span class="tier t3">Basic</span></td><td>600 &times; 500 px (shown at 300 &times; 250)<br><span class="muted">or 600 &times; 1200 px for a tall banner (shown at 300 &times; 600)</span></td><td>In the sidebar next to the article (or on the front page) on computers. On phones it appears inside the article, after the third paragraph.</td></tr>
+      </table>
+    </div>
+  </main>
+
+  <!-- AD EDITOR -->
+  <main class="adm-main" id="vAdEdit" hidden>
+    <div class="ed-bar">
+      <button class="btn btn--ghost btn--sm" id="adBack">&larr; All ads</button>
+      <span class="ed-state" id="adState"></span>
+      <div class="ed-bar-r"><button class="btn btn--red btn--sm" id="adSave">Save ad</button></div>
+    </div>
+    <div class="ad-grid">
+      <div class="ad-form">
+        <div class="ed-box">
+          <h3>Ad type</h3>
+          <div class="seg seg-wrap" id="adType"><button data-t="fullscreen">Full-screen pop-up</button><button data-t="popup" class="on">Small pop-up</button><button data-t="banner">Side banner</button></div>
+          <label class="check" style="margin-top:14px"><input type="checkbox" id="aActive" checked> <span><b>Ad is on</b><small>Untick to pause this ad without deleting it</small></span></label>
+        </div>
+        <div class="ed-box">
+          <h3>Ad content</h3>
+          <div class="field"><label for="aName">Advertiser / ad name (only you see this)</label><input id="aName" placeholder="e.g. Himalayan Kitchen Brisbane: Dashain special"></div>
+          <label class="drop" id="aDrop"><input type="file" id="aFile" accept="image/*" hidden>
+            <span class="drop-empty" id="aDropEmpty"><b id="aDropLabel">Drop the ad image here</b><small id="aSizeHint">Pop-up: 1200 &times; 800 px</small></span>
+            <img id="aImg" alt="" hidden>
+          </label>
+          <div class="fs-only"><label class="drop" id="aDrop2"><input type="file" id="aFile2" accept="image/*" hidden>
+            <span class="drop-empty" id="aDropEmpty2"><b>Phone image (optional)</b><small>1080 &times; 1350 px (portrait). If left empty, phones show the main image.</small></span>
+            <img id="aImg2" alt="" hidden>
+          </label><div class="img-actions" id="aImg2Actions" hidden><button class="btn btn--ghost btn--sm" id="aImg2Remove" type="button">Remove phone image</button></div></div>
+          <div class="field popup-only"><label for="aTitle">Headline <span class="opt-fs muted">(optional)</span></label><input id="aTitle" maxlength="70" placeholder="e.g. Dashain feast for the whole family"></div>
+          <div class="field popup-only"><label for="aText">Short text <span class="opt-fs muted">(optional)</span></label><textarea id="aText" rows="2" maxlength="160" placeholder="e.g. Book your table this weekend and get 15% off."></textarea></div>
+          <div class="field popup-only"><label for="aBtn">Button text <span class="opt-fs muted">(optional)</span></label><input id="aBtn" maxlength="24" placeholder="Learn more"></div>
+          <div class="field"><label for="aLink">Where the ad links to</label><input id="aLink" placeholder="https://advertiser-website.com.au"></div>
+        </div>
+        <div class="ed-box">
+          <h3>Where should it run?</h3>
+          <label class="check"><input type="checkbox" id="aHome"> <span><b>Front page</b><small>Show this ad on the homepage</small></span></label>
+          <div class="target-label">On articles:</div>
+          <div class="target-opts">
+            <label><input type="radio" name="aMode" value="all" checked> All articles</label>
+            <label><input type="radio" name="aMode" value="groups"> Sections or shows</label>
+            <label><input type="radio" name="aMode" value="stories"> Choose articles</label>
+            <label><input type="radio" name="aMode" value="none"> No articles</label>
+          </div>
+          <div id="aGroups" class="target-box" hidden></div>
+          <div id="aStories" class="target-box" hidden>
+            <div class="sc-tools"><input class="adm-search" id="aStorySearch" placeholder="Search articles…"><select id="aStorySec" aria-label="Section"><option value="">All sections</option></select></div>
+            <div class="sc-tools2"><button type="button" class="lnk-btn" id="aSelAll">Select all shown</button><button type="button" class="lnk-btn" id="aSelNone">Clear all</button><span class="muted" id="aSelCount"></span></div>
+            <div id="aStoryList" class="story-checks"></div></div>
+          <p class="muted" id="aExclNote" style="font-size:13px;margin:0 0 12px" hidden></p>
+        </div>
+        <div class="ed-box">
+          <h3>When</h3>
+          <div class="ac-row" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label for="aStart">Start date (optional)</label><input id="aStart" type="date"></div>
+            <div class="field"><label for="aEnd">End date (optional)</label><input id="aEnd" type="date"></div>
+          </div>
+          <p class="muted" style="font-size:13px;margin:0 0 12px">Leave blank to run until you turn it off.</p>
+        </div>
+        <div class="ed-box ed-danger" id="adDangerBox" hidden><button class="btn btn--ghost btn--sm danger" id="adDelete">Delete this ad</button></div>
+      </div>
+      <aside class="ad-preview">
+        <h3>Preview</h3>
+        <div id="adPrev"></div>
+      </aside>
+    </div>
+  </main>
+  <!-- AD PLACEMENT GRID -->
+  <main class="adm-main" id="vAdPlace" hidden>
+    <div class="ed-bar">
+      <button class="btn btn--ghost btn--sm" id="placeBack">&larr; All ads</button>
+      <span class="ed-state" id="placeState">Tick a box to run that ad on that page.</span>
+      <div class="ed-bar-r"><button class="btn btn--red btn--sm" id="placeSave" disabled>Save changes</button></div>
+    </div>
+    <div class="place-tools"><input class="adm-search" id="placeSearch" placeholder="Search articles…"><select id="placeSec" aria-label="Section"><option value="">All sections</option></select><span class="muted" id="placeNote"></span></div>
+    <div class="place-wrap" id="placeWrap"><div class="sk" style="height:300px"></div></div>
   </main>
 </div>
 

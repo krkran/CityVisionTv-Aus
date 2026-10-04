@@ -130,6 +130,7 @@
     o.readMins = a.readMins || 0;
     o.static = a.static === true;
     o.json = a.json === true;
+    o.noAds = a.noAds === true;
     if (a.body != null || a.content != null) {
       var b = a.body != null ? a.body : a.content;
       o.body = /<\w+/.test(b) ? b : String(b).split(/\n{2,}/).map(function (p) { return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>'; }).join('');
