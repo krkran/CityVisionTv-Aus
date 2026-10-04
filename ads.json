@@ -1,5 +1,30 @@
 {
  "enabled": false,
- "updated": "2026-10-04T10:13:09.140Z",
- "ads": []
+ "updated": "2026-10-04T10:32:47.464Z",
+ "ads": [
+  {
+   "id": "capcut-mutomm6w",
+   "type": "popup",
+   "name": "CapCut",
+   "title": "Edit like a pro with CapCut",
+   "text": "Templates, auto captions and smooth effects, all free to start. Click below to try it.",
+   "button": "Try CapCut",
+   "link": "https://capcutaffiliateprogram.pxf.io/c/6854751/2073402/22474",
+   "image": "media/ads/ad-mutoielq.png",
+   "imageMobile": "",
+   "start": "",
+   "end": "",
+   "active": true,
+   "target": {
+    "home": false,
+    "mode": "all",
+    "sections": [],
+    "shows": [],
+    "stories": [],
+    "exclude": []
+   },
+   "updated": "2026-10-04T10:32:47.464Z",
+   "created": "2026-10-04T10:32:47.464Z"
+  }
+ ]
 }
