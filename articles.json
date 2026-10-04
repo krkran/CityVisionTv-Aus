@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-10-04T10:21:58.771Z",
+ "updated": "2026-10-04T10:22:48.186Z",
  "items": [
   {
    "id": "kangresako-15aun-mahadhiweshan-kathamadaun-shuru-gagan-thapale-gare-ud",
@@ -19,12 +19,13 @@
     "महाधिवेशन"
    ],
    "featured": false,
-   "breaking": false,
+   "breaking": true,
    "status": "published",
    "date": "2026-10-04T10:18:00.000Z",
    "readMins": 1,
    "json": true,
-   "static": true
+   "static": true,
+   "updated": "2026-10-04T10:22:46.464Z"
   },
   {
    "id": "pararashtramantri-shishir-khanalako-astreliya-bhraman-badhi-jalawayu-r",
