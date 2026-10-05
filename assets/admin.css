@@ -289,3 +289,16 @@
 @media (max-width: 720px) { .flt-count { margin-left: 0; width: 100%; } .adm-filters select { flex: 1; min-width: 44%; } }
 .place-cta .btn { background: #fff; color: var(--indigo); }
 #aDrop2 img { aspect-ratio: auto; width: 100%; max-height: 280px; object-fit: contain; background: #f6f5f9; }
+
+/* storage meter */
+.storage { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin: 0 0 22px; }
+.sto-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.sto-top b { font-size: 16px; }
+.sto-top span { font-weight: 700; font-size: 14.5px; color: var(--ink-2); }
+.sto-bar { position: relative; height: 10px; border-radius: 99px; background: #ece9f2; overflow: visible; }
+.sto-bar i { display: block; height: 100%; border-radius: 99px; background: #12a150; transition: width .6s var(--ease); }
+.sto-bar em { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #c9c3d6; border-radius: 2px; }
+.st-mid .sto-bar i { background: #e0a000; }
+.st-hi .sto-bar i { background: var(--red); }
+.storage p { margin: 10px 0 4px; font-size: 14.5px; line-height: 1.45; }
+.storage small { font-size: 12.5px; }

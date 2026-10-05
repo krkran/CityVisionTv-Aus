@@ -5,6 +5,7 @@
    ========================================================== */
 (function (root) {
   var CFG = (typeof module !== 'undefined' && module.exports) ? require('./config.js') : root.CV_CONFIG;
+  var ASSET_V = '2610051'; // bump when site code changes so browsers fetch the new files
 
   /* ---------- utilities ---------- */
   function esc(s) {
@@ -398,10 +399,10 @@
       '<meta name="theme-color" content="#2b0782">\n<link rel="alternate" type="application/rss+xml" title="CityVision TV" href="' + base + 'feed.xml">\n' +
       '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
       '<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Montserrat:wght@300;400;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">\n' +
-      '<link rel="stylesheet" href="' + base + 'assets/site.css">\n';
+      '<link rel="stylesheet" href="' + base + 'assets/site.css?v=' + ASSET_V + '">\n';
   }
   function tailAssets(base) {
-    return '<script src="' + base + 'assets/config.js"></script>\n<script src="' + base + 'assets/build.js"></script>\n<script src="' + base + 'assets/site.js"></script>\n';
+    return '<script src="' + base + 'assets/config.js?v=' + ASSET_V + '"></script>\n<script src="' + base + 'assets/build.js?v=' + ASSET_V + '"></script>\n<script src="' + base + 'assets/site.js?v=' + ASSET_V + '"></script>\n';
   }
 
   /* ---------- RSS + sitemap ---------- */

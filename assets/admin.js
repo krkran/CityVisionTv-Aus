@@ -133,7 +133,7 @@
   }
   function loadIndex() {
     $('#dashSub').textContent = 'Loading…';
-    return readFile('articles.json').then(function (t) { S.index = parseIndex(t).sort(function (a, b) { return new Date(b.date) - new Date(a.date); }); drawDash(); drawTraffic(); })
+    return readFile('articles.json').then(function (t) { S.index = parseIndex(t).sort(function (a, b) { return new Date(b.date) - new Date(a.date); }); drawDash(); drawTraffic(); drawStorage(); })
       .catch(function (e) { $('#rows').innerHTML = '<div class="rows-empty">Could not load stories: ' + esc(e.message) + '</div>'; });
   }
 
@@ -231,6 +231,29 @@
   }
   function fmtNum(n) { return n >= 10000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + 'k' : n.toLocaleString('en-AU'); }
   function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  /* ---------- storage meter (GitHub recommends keeping a site under 1 GB) ---------- */
+  function drawStorage() {
+    var box = $('#storage'); if (!box) return;
+    gh('').then(function (repo) {
+      var kb = +repo.size || 0; if (!kb) return;
+      var LIMIT = 1024, PLAN = 700; // MB: GitHub's limit, and the point to start planning the move
+      var mb = kb / 1024, pct = Math.min(100, mb / LIMIT * 100);
+      var posts = S.index.length, base = 15; // roughly what the site code, logos and brand images take
+      // until there are enough posts for a fair average, assume about 0.33 MB per post (photo + page)
+      var per = posts >= 50 ? Math.min(2, Math.max(0.05, (mb - base) / posts)) : 0.33;
+      var left = Math.max(0, Math.floor((PLAN - mb) / per));
+      var lvl = mb >= PLAN ? 'hi' : mb >= PLAN * 0.7 ? 'mid' : 'ok';
+      var pl = function (n) { return n.toLocaleString() + ' more post' + (n === 1 ? '' : 's'); };
+      var fmt = function (v) { return v >= 100 ? Math.round(v) + ' MB' : v.toFixed(1) + ' MB'; };
+      var msg = lvl === 'ok' ? 'Plenty of room. Roughly <b>' + pl(left) + '</b> before you need to think about moving photos.'
+        : lvl === 'mid' ? 'Getting fuller. Roughly <b>' + pl(left) + '</b> before it’s time to move photos to Cloudflare. Worth planning the switch soon.'
+        : 'Time to move photos to Cloudflare. The site still works, but you are close to GitHub’s 1 GB limit.';
+      box.className = 'storage st-' + lvl; box.hidden = false;
+      box.innerHTML = '<div class="sto-top"><b>Storage</b><span>' + fmt(mb) + ' of 1 GB used</span></div>' +
+        '<div class="sto-bar"><i style="width:' + Math.max(1, pct).toFixed(1) + '%"></i><em style="left:' + (PLAN / LIMIT * 100) + '%" title="Plan the move here (700 MB)"></em></div>' +
+        '<p>' + msg + '</p><small class="muted">' + (posts >= 50 ? 'About ' + (per * 1024 < 1000 ? Math.round(per * 1024) + ' KB' : per.toFixed(1) + ' MB') + ' per post on average · ' : 'Based on about 330 KB per post · ') + posts.toLocaleString() + ' posts · GitHub updates this figure every few hours.</small>';
+    }, function () {});
+  }
   function drawTraffic() {
     var host = $('#traffic'); if (!host) return;
     var dash = 'https://' + gcCode() + '.goatcounter.com';
