@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-10-13T09:57:35.023Z",
+ "updated": "2026-10-24T21:36:47.337Z",
  "items": [
   {
    "id": "is-this-the-next-global-chocolate-trend",
@@ -286,33 +286,6 @@
    "breaking": false,
    "status": "published",
    "tags": [],
-   "readMins": 1,
-   "static": true,
-   "json": true,
-   "noAds": false
-  },
-  {
-   "id": "hamro-story-new-episodes-last-saturday",
-   "type": "article",
-   "title": "Hamro Story: new episodes on the last Saturday of every month",
-   "summary": "Our series about Nepali people building their lives in Australia continues, with a new episode released on the last Saturday of each month.",
-   "show": "hamro-story",
-   "category": "culture",
-   "author": "CityVision TV",
-   "image": "",
-   "imageAlt": "",
-   "imageCaption": "",
-   "video": "",
-   "link": "",
-   "date": "2026-09-27T03:00:00.000Z",
-   "updated": "",
-   "featured": false,
-   "breaking": false,
-   "status": "published",
-   "tags": [
-    "Hamro Story",
-    "Series"
-   ],
    "readMins": 1,
    "static": true,
    "json": true,
