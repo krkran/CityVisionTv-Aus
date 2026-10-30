@@ -261,7 +261,7 @@
       '<div class="foot-col"><h4>Shows</h4>' + CFG.shows.map(function (s) { return '<a href="' + url(base, 'shows/' + s.id) + '">' + esc(s.name) + '</a>'; }).join('') + '</div>' +
       '<div class="foot-col"><h4>CityVision</h4><a href="' + url(base, 'about') + '">About us</a><a href="' + url(base, 'contact') + '">Contact</a>' +
       '<a href="' + url(base, 'contact?topic=story') + '">Submit a story</a><a href="' + url(base, 'contact?topic=advertising') + '">Advertise with us</a>' +
-      '<a href="' + url(base, 'contact?topic=event') + '">List an event</a><a href="' + url(base, 'updates') + '">Latest updates</a><a href="' + url(base, 'feed.xml') + '">RSS feed</a></div>' +
+      '<a href="' + url(base, 'contact?topic=event') + '">List an event</a><a href="' + url(base, 'updates') + '">Latest updates</a><a href="' + url(base, 'feed.xml') + '">RSS feed</a><a href="' + url(base, 'privacy') + '">Privacy policy</a></div>' +
       '<div class="foot-col"><h4>Follow</h4><a href="' + S.youtube + '" target="_blank" rel="noopener">YouTube</a><a href="' + S.facebook + '" target="_blank" rel="noopener">Facebook</a>' +
       '<a href="' + S.instagram + '" target="_blank" rel="noopener">Instagram</a><a href="' + S.tiktok + '" target="_blank" rel="noopener">TikTok</a><a href="' + S.spotify + '" target="_blank" rel="noopener">Spotify</a>' +
       '<a href="mailto:' + CFG.email + '">Email us</a></div></div>' +
@@ -421,7 +421,7 @@
       }).join('') + '</channel>\n</rss>\n';
   }
   function sitemapXML(index) {
-    var pages = ['', 'watch', 'shows/', 'updates', 'about', 'contact'].map(function (p) { return CFG.siteUrl + '/' + p; });
+    var pages = ['', 'watch', 'shows/', 'updates', 'about', 'contact', 'privacy'].map(function (p) { return CFG.siteUrl + '/' + p; });
     CFG.categories.forEach(function (c) { pages.push(CFG.siteUrl + '/' + c.id); });
     CFG.shows.forEach(function (s) { pages.push(CFG.siteUrl + '/shows/' + s.id); });
     var out = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
