@@ -1,29 +1,30 @@
 {
  "version": 2,
- "updated": "2026-11-04T09:13:06.258Z",
+ "updated": "2026-11-04T09:13:26.399Z",
  "items": [
   {
    "id": "nepal-prahariko-netritwa-pariwartan-manoj-kesi-nayan-aaijipi-niyukta-d",
    "type": "article",
    "title": "नेपाल प्रहरीको नेतृत्व परिवर्तन : मनोज केसी नयाँ आईजीपी नियुक्त, दानबहादुर कार्की प्रधानमन्त्रीको सुरक्षा सल्लाहकार",
    "summary": "काठमाडौं, ४ नोभेम्बर २०२६। नेपाल सरकारले नेपाल प्रहरीको नेतृत्व परिवर्तन गर्दै प्रहरी अतिरिक्त महानिरीक्षक (एआईजी) मनोजकुमार केसीलाई प्रहरी महानिरीक्षक (आईजीपी) नियुक्त गर्ने निर्णय गरेको छ। आज बसेको…",
-   "category": "news",
    "show": "",
+   "category": "news",
    "author": "Kiran Khanal",
    "image": "media/2026/11/nepal-prahariko-netritwa-pariwartan-mano-main-mw1wfi1a.jpg",
    "imageAlt": "",
    "imageCaption": "",
    "video": "",
    "link": "",
-   "tags": [],
+   "date": "2026-11-04T09:11:00.000Z",
+   "updated": "",
    "featured": true,
    "breaking": false,
    "status": "published",
-   "date": "2026-11-04T09:11:00.000Z",
-   "noAds": false,
+   "tags": [],
    "readMins": 1,
+   "static": true,
    "json": true,
-   "static": true
+   "noAds": false
   },
   {
    "id": "is-this-the-next-global-chocolate-trend",
@@ -122,9 +123,9 @@
    "video": "",
    "link": "",
    "date": "2026-10-04T10:18:00.000Z",
-   "updated": "2026-10-04T10:23:30.565Z",
+   "updated": "2026-11-04T09:13:24.659Z",
    "featured": false,
-   "breaking": true,
+   "breaking": false,
    "status": "published",
    "tags": [
     "महाधिवेशन"
