@@ -1,6 +1,6 @@
 {
  "version": 2,
- "updated": "2026-11-04T09:13:38.166Z",
+ "updated": "2026-11-18T01:55:29.655Z",
  "items": [
   {
    "id": "nepal-prahariko-netritwa-pariwartan-manoj-kesi-nayan-aaijipi-niyukta-d",
@@ -16,9 +16,9 @@
    "video": "",
    "link": "",
    "date": "2026-11-04T09:11:00.000Z",
-   "updated": "2026-11-04T09:13:36.527Z",
-   "featured": true,
-   "breaking": true,
+   "updated": "2026-11-18T01:55:28.002Z",
+   "featured": false,
+   "breaking": false,
    "status": "published",
    "tags": [],
    "readMins": 1,
