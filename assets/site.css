@@ -685,3 +685,6 @@ figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-heig
   .cv-fs-card .cv-pop-b b { font-size: 18px; }
 }
 .split-side .cv-banner--home { margin-bottom: 24px; }
+
+/* Watch: fill the side column next to the big video (phones keep 3) */
+@media (max-width: 900px) { .watch-side > :nth-child(n+4) { display: none; } }

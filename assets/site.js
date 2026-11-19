@@ -300,7 +300,7 @@
     var shorts = ytShorts();
     h += '<section class="watch" data-lightbox><div class="wrap"><div class="sec-h"><h2><span class="dot"></span>Watch</h2><div class="sec-h-r"><a class="btn btn--red btn--sm" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe</a><a class="lnk" href="' + BASE + 'watch">All videos ' + I.arrow + '</a></div></div>';
     if (vids.length) {
-      h += '<div class="watch-grid"><div>' + card(vids[0], 'lead') + '</div><div class="watch-side">' + vids.slice(1, 4).map(function (p) { return card(p, 'row'); }).join('') + '</div></div>';
+      h += '<div class="watch-grid"><div>' + card(vids[0], 'lead') + '</div><div class="watch-side">' + vids.slice(1, 6).map(function (p) { return card(p, 'row'); }).join('') + '</div></div>';
     } else if (YT_UPLOADS) {
       h += '<div class="watch-empty"><div><span class="eyebrow eyebrow--light">CityVision on YouTube</span><h3>Documentaries, talk shows and community stories</h3><p>Watch Hamro Story, Kurakani, My Days in Nepal and more.</p><a class="btn btn--red" href="' + YT_SUB + '" target="_blank" rel="noopener">' + I.yt + ' Subscribe on YouTube</a></div><div class="embed"><iframe src="https://www.youtube-nocookie.com/embed/videoseries?list=' + YT_UPLOADS + '" title="CityVision TV on YouTube" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div></div>';
     }
