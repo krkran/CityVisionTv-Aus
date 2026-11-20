@@ -1,20 +1,25 @@
 {
  "version": 2,
- "updated": "2026-11-20T11:54:21.253Z",
+ "updated": "2026-11-20T11:55:33.720Z",
  "items": [
   {
    "id": "je-gar-timi-sarwajanik-prem-ra-wiyogako-bhawanatmak-katha",
    "type": "article",
    "title": "'जे गर तिमी' सार्वजनिक: प्रेम र वियोगको भावनात्मक कथा",
    "summary": "क्विन्सल्यान्डमा बस्दै आएका अभिनेता तथा निर्माता देव नेपालीको नयाँ म्युजिक भिडियो 'जे गर तिमी' सार्वजनिक भएको छ। देव नेपाली र करिश्मा श्रेष्ठ अभिनीत भिडियोमा सानो असमझदारीले वियोगमा टुङ्गिने प्रेमकथा देखाइएको छ।",
-   "category": "community",
    "show": "",
+   "category": "community",
    "author": "Kiran Khanal",
-   "image": "media/2026/11/je-gar-timi-sarwajanik-prem-ra-wiyogako--main-mwox35is.jpg",
+   "image": "media/2026/11/je-gar-timi-sarwajanik-prem-ra-wiyogako--main-mwoxa2vm.jpg",
    "imageAlt": "",
    "imageCaption": "",
    "video": "",
    "link": "",
+   "date": "2026-11-20T11:46:00.000Z",
+   "updated": "2026-11-20T11:55:31.950Z",
+   "featured": false,
+   "breaking": false,
+   "status": "published",
    "tags": [
     "Music video",
     "Nepali",
@@ -22,14 +27,10 @@
     "Viral",
     "Karishma Shrestha"
    ],
-   "featured": false,
-   "breaking": false,
-   "status": "published",
-   "date": "2026-11-20T11:46:00.000Z",
-   "noAds": false,
    "readMins": 1,
+   "static": true,
    "json": true,
-   "static": true
+   "noAds": false
   },
   {
    "id": "kathamadaunka-sarwajanik-shauchalay-dayaniy-jenaji-aandolanapachhiko-s",
